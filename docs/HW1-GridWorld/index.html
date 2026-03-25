@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GridWorld Q-Learning — Demo</title>
-  <meta name="description" content="Static GitHub Pages demo of the GridWorld Q-Learning HW1 project. Configure an n×n grid and visualise a random policy with state values." />
+  <title>GridWorld Q-Learning — Interactive Demo</title>
+  <meta name="description" content="Live Q-Learning animation demo. Configure a grid, watch the agent train step-by-step, and see the policy evolve in real time." />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
 
   <h1>🧭 GridWorld Q-Learning</h1>
-  <p class="subtitle">HW1 Static Demo &nbsp;|&nbsp; Reinforcement Learning</p>
+  <p class="subtitle">HW1 Interactive Demo &nbsp;|&nbsp; Watch the agent learn in real time</p>
 
-  <!-- ── Controls ──────────────────────────────── -->
+  <!-- ── Grid size + Speed controls ──────────────── -->
   <div class="controls">
     <label for="grid-size">Grid Size (n × n)</label>
     <select id="grid-size">
@@ -24,35 +24,77 @@
     </select>
   </div>
 
-  <!-- ── Legend ────────────────────────────────── -->
+  <!-- ── Legend ────────────────────────────────────── -->
   <div class="legend">
-    <div class="legend-item"><div class="dot dot-start"></div> Start (1st click)</div>
-    <div class="legend-item"><div class="dot dot-goal"></div> Goal (2nd click)</div>
-    <div class="legend-item"><div class="dot dot-obstacle"></div> Obstacle (next <span id="legend-obstacle-count">3</span> clicks)</div>
+    <div class="legend-item"><div class="dot dot-start"></div> Start</div>
+    <div class="legend-item"><div class="dot dot-goal"></div> Goal</div>
+    <div class="legend-item"><div class="dot dot-obstacle"></div> Obstacle (<span id="legend-obstacle-count">3</span>)</div>
+    <div class="legend-item"><div class="dot dot-agent"></div> Agent</div>
     <div class="legend-item"><div class="dot dot-free"></div> Free cell</div>
   </div>
 
-  <!-- ── Status bar ────────────────────────────── -->
+  <!-- ── Status bar ──────────────────────────────── -->
   <div id="status-bar">Click a cell to set the <strong>Start</strong> position.</div>
 
-  <!-- ── Grid ──────────────────────────────────── -->
+  <!-- ── Training stats ──────────────────────────── -->
+  <div id="stats-panel">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Episode</div>
+        <div class="stat-value" id="stat-episode">0 / 300</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Steps</div>
+        <div class="stat-value" id="stat-step">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Epsilon ε</div>
+        <div class="stat-value" id="stat-epsilon">0.900</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Success</div>
+        <div class="stat-value" id="stat-success">0.0%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Outcome</div>
+        <div class="stat-value" id="stat-outcome">—</div>
+      </div>
+    </div>
+    <!-- progress bar -->
+    <div class="progress-track" style="width:90%;max-width:460px;">
+      <div id="progress-bar"></div>
+    </div>
+  </div>
+
+  <!-- ── Grid ──────────────────────────────────────── -->
   <div id="grid-container"></div>
 
-  <!-- ── Buttons ───────────────────────────────── -->
+  <!-- ── Buttons ────────────────────────────────────── -->
+  <div class="speed-row">
+    <label for="speed">Animation Speed</label>
+    <select id="speed">
+      <option value="slow">🐢 Slow</option>
+      <option value="normal" selected>🚶 Normal</option>
+      <option value="fast">🏃 Fast</option>
+      <option value="turbo">⚡ Turbo</option>
+    </select>
+  </div>
+
   <div class="btn-row">
-    <button class="btn btn-reset"  onclick="resetGrid()">↺ Reset</button>
-    <button class="btn btn-policy" onclick="showPolicy()">⚡ Show Random Policy</button>
+    <button class="btn btn-reset"  onclick="resetAll()">↺ Reset</button>
+    <button class="btn btn-run"    id="btn-run"   onclick="startAnimation()">▶ Run Q-Learning</button>
+    <button class="btn btn-pause"  id="btn-pause" onclick="pauseResume()" disabled>⏸ Pause</button>
+    <button class="btn btn-random" onclick="showRandomPolicy()">🎲 Random Policy</button>
     <button class="btn btn-back"   onclick="window.location.href='../index.html'">← Home</button>
   </div>
 
-  <!-- ── Info / result panel ───────────────────── -->
+  <!-- ── Info / result panel ────────────────────────── -->
   <div id="info-panel"></div>
 
   <footer>
     <p>
       <a href="https://github.com/cachouuu/DRL" target="_blank">GitHub Repository</a>
-      &nbsp;·&nbsp;
-      Static demo — no server required.
+      &nbsp;·&nbsp; All computation runs in your browser — no server required.
     </p>
   </footer>
 

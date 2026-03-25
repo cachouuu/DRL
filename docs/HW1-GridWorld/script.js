@@ -1,46 +1,79 @@
 /**
  * docs/HW1-GridWorld/script.js
- * --------------------------------
- * Static GitHub Pages demo for the GridWorld Q-Learning HW.
- * No Python / server required — everything runs in the browser.
+ * ------------------------------------------------
+ * Static GitHub Pages demo — GridWorld Q-Learning
  *
  * Features:
- *   • Selectable grid size n (5–9)
- *   • Clickable cells: Start (1st), Goal (2nd), Obstacles (next n–2)
- *   • Random policy arrows on free cells (after "Show Policy" click)
- *   • Simple state-value display (uniform random walk value estimate)
+ *  • Grid setup: Start / Goal / Obstacles via clicks
+ *  • ▶ Run Q-Learning: live animated training
+ *    – Agent moves step-by-step on the grid
+ *    – Q-table updates after every step (ε-greedy + Bellman)
+ *    – Policy arrows refresh to reflect current Q-table
+ *    – Cell background tinted by max-Q value
+ *    – Stats panel: Episode, Step, ε, Success rate, Path length
+ *  • Speed control: Slow / Normal / Fast / Turbo
+ *  • ⏸ Pause / ▶ Resume
+ *  • Show Random Policy (baseline comparison)
  */
 
-/* ---------------------------------------------------------------
-   Constants / config
---------------------------------------------------------------- */
-const ACTIONS = ['↑', '↓', '←', '→'];   // arrow symbols
+/* ═══════════════════════════════════════════════════════════════
+   CONFIG
+══════════════════════════════════════════════════════════════ */
+const ALPHA        = 0.1;    // learning rate
+const GAMMA_QL     = 0.9;    // discount factor
+const EPSILON_START= 0.9;    // initial ε
+const EPSILON_MIN  = 0.05;   // floor ε
+const EPSILON_DECAY= 0.995;  // per-episode decay
+const MAX_EPISODES = 300;
+const MAX_STEPS    = 300;
 
-/* ---------------------------------------------------------------
-   State
---------------------------------------------------------------- */
-let n            = 5;
-let maxObstacles = n - 2;
-let phase        = 'start';   // 'start'|'goal'|'obstacle'|'done'
-let startPos     = null;      // "row,col"
-let endPos       = null;
-let blockPos     = [];        // [[r,c], ...]
+const SPEED_MAP = { slow: 350, normal: 80, fast: 12, turbo: 0 };
 
-/* ---------------------------------------------------------------
-   DOM helpers
---------------------------------------------------------------- */
+const ARROW_KEYS  = ['↑', '↓', '←', '→'];
+const DELTAS      = { '↑':[-1,0], '↓':[1,0], '←':[0,-1], '→':[0,1] };
+
+/* ═══════════════════════════════════════════════════════════════
+   GRID SETUP STATE
+══════════════════════════════════════════════════════════════ */
 const $ = id => document.getElementById(id);
 
-/* ---------------------------------------------------------------
-   Build the grid
---------------------------------------------------------------- */
+let n            = 5;
+let maxObstacles = 3;
+let phase        = 'start';
+let startPos     = null;   // "r,c"
+let endPos       = null;
+let blockPos     = [];     // [[r,c],...]
+
+/* ═══════════════════════════════════════════════════════════════
+   Q-LEARNING STATE
+══════════════════════════════════════════════════════════════ */
+let qTable       = {};     // { "r,c": { ↑:0, ↓:0, ←:0, →:0 } }
+let epsilon      = EPSILON_START;
+let episodeNum   = 0;
+let successCount = 0;
+let animRunning  = false;
+let paused       = false;
+let animTimer    = null;
+let agentR       = 0, agentC = 0;
+let stepInEp     = 0;
+let epReward     = 0;
+let lastOutcome  = '';
+
+/* ═══════════════════════════════════════════════════════════════
+   GRID BUILDER
+══════════════════════════════════════════════════════════════ */
 function buildGrid() {
+  stopAnimation();
   n            = parseInt($('grid-size').value, 10);
   maxObstacles = n - 2;
   phase        = 'start';
   startPos     = null;
   endPos       = null;
   blockPos     = [];
+  qTable       = {};
+  epsilon      = EPSILON_START;
+  episodeNum   = 0;
+  successCount = 0;
 
   const container = $('grid-container');
   container.innerHTML = '';
@@ -50,11 +83,9 @@ function buildGrid() {
     row.className = 'grid-row';
     for (let c = 0; c < n; c++) {
       const cell = document.createElement('div');
-      cell.className  = 'cell';
-      cell.id         = `cell-${r}-${c}`;
-      cell.dataset.row = r;
-      cell.dataset.col = c;
-      cell.innerHTML  = `<span class="cell-coord">${r},${c}</span>`;
+      cell.className = 'cell';
+      cell.id        = `cell-${r}-${c}`;
+      cell.innerHTML = `<span class="cell-coord">${r},${c}</span>`;
       cell.addEventListener('click', () => cellClicked(r, c));
       row.appendChild(cell);
     }
@@ -62,26 +93,27 @@ function buildGrid() {
   }
 
   $('info-panel').style.display = 'none';
+  hideStats();
   updateStatus();
   updateLegend();
+  setButtonState('idle');
 }
 
-/* ---------------------------------------------------------------
-   Cell click handler
---------------------------------------------------------------- */
+/* ═══════════════════════════════════════════════════════════════
+   CELL CLICK HANDLER
+══════════════════════════════════════════════════════════════ */
 function cellClicked(row, col) {
+  if (animRunning) return;          // lock grid while training
   const key = `${row},${col}`;
 
   if (phase === 'start') {
     markCell(row, col, 'start');
-    startPos = key;
-    phase = 'goal';
+    startPos = key; phase = 'goal';
 
   } else if (phase === 'goal') {
     if (key === startPos) { alert('Goal must differ from Start.'); return; }
     markCell(row, col, 'goal');
-    endPos = key;
-    phase = 'obstacle';
+    endPos = key; phase = 'obstacle';
 
   } else if (phase === 'obstacle') {
     if (key === startPos || key === endPos) {
@@ -89,13 +121,11 @@ function cellClicked(row, col) {
     }
     const el = $(`cell-${row}-${col}`);
     if (el.classList.contains('obstacle')) {
-      // toggle off
       el.classList.remove('obstacle');
-      el.querySelector('.cell-arrow') && el.querySelector('.cell-arrow').remove();
-      blockPos = blockPos.filter(([r, c]) => !(r === row && c === col));
+      blockPos = blockPos.filter(([r,c]) => !(r===row && c===col));
     } else {
       if (blockPos.length >= maxObstacles) {
-        alert(`Max ${maxObstacles} obstacle(s) for a ${n}×${n} grid.`); return;
+        alert(`Max ${maxObstacles} obstacle(s).`); return;
       }
       markCell(row, col, 'obstacle');
       blockPos.push([row, col]);
@@ -103,172 +133,380 @@ function cellClicked(row, col) {
     }
 
   } else {
-    // 'done' – allow toggling obstacles off
     const el = $(`cell-${row}-${col}`);
     if (el.classList.contains('obstacle')) {
       el.classList.remove('obstacle');
-      blockPos = blockPos.filter(([r, c]) => !(r === row && c === col));
+      blockPos = blockPos.filter(([r,c]) => !(r===row && c===col));
       phase = 'obstacle';
     }
   }
 
-  clearPolicy();   // wipe arrows/values if grid changes
+  clearOverlays();
   updateStatus();
 }
 
-/* ---------------------------------------------------------------
-   Apply a CSS class to a cell
---------------------------------------------------------------- */
+/* ═══════════════════════════════════════════════════════════════
+   MARK CELL
+══════════════════════════════════════════════════════════════ */
 function markCell(row, col, type) {
   const el = $(`cell-${row}-${col}`);
-  el.classList.remove('start', 'goal', 'obstacle');
-  el.classList.add(type);
-  // remove any arrow left over
-  const arrow = el.querySelector('.cell-arrow');
-  if (arrow) arrow.remove();
-  const val = el.querySelector('.cell-value');
-  if (val)   val.remove();
+  el.classList.remove('start','goal','obstacle','agent');
+  if (type) el.classList.add(type);
+  el.querySelector('.cell-arrow') && el.querySelector('.cell-arrow').remove();
+  el.querySelector('.cell-value') && el.querySelector('.cell-value').remove();
 }
 
-/* ---------------------------------------------------------------
-   Status bar
---------------------------------------------------------------- */
+/* ═══════════════════════════════════════════════════════════════
+   STATUS / LEGEND
+══════════════════════════════════════════════════════════════ */
 function updateStatus() {
-  const bar       = $('status-bar');
-  const remaining = maxObstacles - blockPos.length;
-
-  if (phase === 'start') {
-    bar.innerHTML = 'Click a cell to set the <strong>Start</strong> position.';
-  } else if (phase === 'goal') {
-    bar.innerHTML = 'Click a cell to set the <strong>Goal</strong> position.';
-  } else if (phase === 'obstacle') {
-    bar.innerHTML = `Click <strong>${remaining}</strong> more cell(s) to place Obstacles.`;
-  } else {
-    bar.innerHTML = '✅ Grid configured! Click <strong>Show Random Policy</strong> to display arrows.';
-  }
+  const bar = $('status-bar');
+  const rem = maxObstacles - blockPos.length;
+  if      (phase==='start')    bar.innerHTML = 'Click a cell → set <strong>Start</strong> (green).';
+  else if (phase==='goal')     bar.innerHTML = 'Click a cell → set <strong>Goal</strong> (red).';
+  else if (phase==='obstacle') bar.innerHTML = `Click <strong>${rem}</strong> more cell(s) → place Obstacles.`;
+  else                         bar.innerHTML = '✅ Grid ready! Press <strong>▶ Run Q-Learning</strong> to train.';
 }
 
-/* ---------------------------------------------------------------
-   Legend – update obstacle count dynamically
---------------------------------------------------------------- */
 function updateLegend() {
   const el = $('legend-obstacle-count');
   if (el) el.textContent = n - 2;
 }
 
-/* ---------------------------------------------------------------
-   Reset
---------------------------------------------------------------- */
-function resetGrid() {
-  buildGrid();   // rebuilds with current n selection
+/* ═══════════════════════════════════════════════════════════════
+   Q-TABLE HELPERS
+══════════════════════════════════════════════════════════════ */
+function initState(key) {
+  if (!qTable[key]) qTable[key] = { '↑':0, '↓':0, '←':0, '→':0 };
 }
 
-/* ---------------------------------------------------------------
-   Random Policy: assign a random arrow to every free cell
-   and compute a rough state value via 20-step random rollout.
---------------------------------------------------------------- */
-function showPolicy() {
+function getQ(r, c, a) { const k=`${r},${c}`; initState(k); return qTable[k][a]; }
+function setQ(r, c, a, v){ const k=`${r},${c}`; initState(k); qTable[k][a]=v; }
+function maxQ(r, c)  { initState(`${r},${c}`); return Math.max(...ARROW_KEYS.map(a=>getQ(r,c,a))); }
+function bestAction(r, c) {
+  initState(`${r},${c}`);
+  const vals = ARROW_KEYS.map(a=>getQ(r,c,a));
+  const mx   = Math.max(...vals);
+  const ties = ARROW_KEYS.filter((_,i)=>vals[i]===mx);
+  return ties[Math.floor(Math.random()*ties.length)];
+}
+
+function chooseAction(r, c, eps) {
+  return Math.random() < eps
+    ? bestAction(r, c)
+    : ARROW_KEYS[Math.floor(Math.random()*4)];
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ENV STEP
+══════════════════════════════════════════════════════════════ */
+function envStep(r, c, action) {
+  const [dr,dc] = DELTAS[action];
+  const nr = Math.max(0, Math.min(n-1, r+dr));
+  const nc = Math.max(0, Math.min(n-1, c+dc));
+  const key = `${nr},${nc}`;
+  const blockSet = new Set(blockPos.map(([a,b])=>`${a},${b}`));
+  let reward=0, done=false;
+  if (key===endPos)          { reward= 1; done=true; }
+  else if(blockSet.has(key)) { reward=-1; done=true; }
+  return { nr, nc, reward, done };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATION LOOP
+══════════════════════════════════════════════════════════════ */
+let pendingAction = null;
+let pendingState  = null;
+
+function startAnimation() {
   if (phase !== 'done') {
-    alert('Please finish configuring the grid first (set Start, Goal, and all Obstacles).');
-    return;
+    alert('Please finish setting up the grid first.'); return;
   }
+  stopAnimation();
+  qTable = {}; epsilon = EPSILON_START; episodeNum = 0;
+  successCount = 0; lastOutcome = '';
+  clearOverlays();
+  showStats();
+  animRunning = true; paused = false;
+  setButtonState('running');
+  beginEpisode();
+}
 
-  clearPolicy();
+function beginEpisode() {
+  if (!animRunning) return;
+  if (episodeNum >= MAX_EPISODES) { finishTraining(); return; }
+  episodeNum++;
+  const [sr,sc] = startPos.split(',').map(Number);
+  agentR = sr; agentC = sc;
+  stepInEp = 0; epReward = 0;
+  renderAgent();
+  updateStatsPanel();
+  scheduleStep();
+}
 
-  const [sr, sc]   = startPos.split(',').map(Number);
-  const [er, ec]   = endPos.split(',').map(Number);
-  const blockSet   = new Set(blockPos.map(([r, c]) => `${r},${c}`));
-  const goalKey    = `${er},${ec}`;
+function scheduleStep() {
+  const delay = SPEED_MAP[$('speed').value] || 80;
+  if (delay === 0) {
+    // turbo: run whole episode instantly, then animate next
+    runEpisodeFast();
+  } else {
+    animTimer = setTimeout(doStep, delay);
+  }
+}
 
-  const deltas = { '↑': [-1,0], '↓': [1,0], '←': [0,-1], '→': [0,1] };
+/* one animated step */
+function doStep() {
+  if (!animRunning || paused) return;
 
-  // For each free cell compute a simple average return under random policy
-  for (let r = 0; r < n; r++) {
-    for (let c = 0; c < n; c++) {
-      const key = `${r},${c}`;
-      if (key === goalKey || blockSet.has(key)) continue;
+  const action  = chooseAction(agentR, agentC, epsilon);
+  const { nr, nc, reward, done } = envStep(agentR, agentC, action);
 
-      const el = $(`cell-${r}-${c}`);
+  // Q-learning update
+  const oldQ    = getQ(agentR, agentC, action);
+  const targetQ = done ? reward : reward + GAMMA_QL * maxQ(nr, nc);
+  setQ(agentR, agentC, action, oldQ + ALPHA*(targetQ - oldQ));
 
-      // Random arrow
-      const arrowSym = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
-      const arrowEl  = document.createElement('span');
-      arrowEl.className   = 'cell-arrow';
-      arrowEl.textContent = arrowSym;
-      el.appendChild(arrowEl);
+  // Move agent
+  clearAgentCell(agentR, agentC);
+  agentR = nr; agentC = nc;
+  epReward += reward;
+  stepInEp++;
 
-      // Simple Monte-Carlo value: average return over 30 random rollouts
-      let totalReturn = 0;
-      const ROLLOUTS  = 30;
-      const HORIZON   = 30;
-      const GAMMA     = 0.9;
+  renderAgent();
+  refreshArrows();
+  refreshHeatmap();
 
-      for (let trial = 0; trial < ROLLOUTS; trial++) {
-        let cr = r, cc = c, ret = 0, discount = 1;
-        for (let step = 0; step < HORIZON; step++) {
-          const sym = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
-          const [dr, dc] = deltas[sym];
-          let nr = Math.max(0, Math.min(n - 1, cr + dr));
-          let nc = Math.max(0, Math.min(n - 1, cc + dc));
-          const nKey = `${nr},${nc}`;
-          let reward = 0, done = false;
-          if (nKey === goalKey)       { reward =  1; done = true; }
-          else if (blockSet.has(nKey)){ reward = -1; done = true; }
-          ret += discount * reward;
-          discount *= GAMMA;
-          cr = nr; cc = nc;
-          if (done) break;
-        }
-        totalReturn += ret;
-      }
+  if (done || stepInEp >= MAX_STEPS) {
+    lastOutcome = done && reward===1 ? 'GOAL 🏆' : done ? 'OBSTACLE 💥' : 'TIMEOUT ⏱';
+    if (done && reward===1) successCount++;
+    epsilon = Math.max(EPSILON_MIN, epsilon * EPSILON_DECAY);
+    updateStatsPanel();
+    clearAgentCell(agentR, agentC);
+    // short pause between episodes
+    const delay = SPEED_MAP[$('speed').value] || 80;
+    animTimer = setTimeout(beginEpisode, Math.max(delay, 120));
+  } else {
+    updateStatsPanel();
+    scheduleStep();
+  }
+}
 
-      const val    = (totalReturn / ROLLOUTS).toFixed(2);
-      const valEl  = document.createElement('span');
-      valEl.className   = 'cell-value';
-      valEl.textContent = val;
-      el.appendChild(valEl);
+/* turbo: run one full episode without rendering mid-steps */
+function runEpisodeFast() {
+  if (!animRunning) return;
+  if (episodeNum >= MAX_EPISODES) { finishTraining(); return; }
+  episodeNum++;
+  const [sr,sc] = startPos.split(',').map(Number);
+  let r=sr, c=sc, steps=0, outcome='TIMEOUT ⏱', rew=0;
+
+  while (steps < MAX_STEPS) {
+    const action = chooseAction(r, c, epsilon);
+    const { nr, nc, reward, done } = envStep(r, c, action);
+    const oldQ   = getQ(r, c, action);
+    const tgt    = done ? reward : reward + GAMMA_QL * maxQ(nr, nc);
+    setQ(r, c, action, oldQ + ALPHA*(tgt - oldQ));
+    r=nr; c=nc; rew+=reward; steps++;
+    if (done) {
+      outcome = reward===1 ? 'GOAL 🏆' : 'OBSTACLE 💥';
+      if (reward===1) successCount++;
+      break;
     }
   }
+  lastOutcome = outcome;
+  epsilon = Math.max(EPSILON_MIN, epsilon * EPSILON_DECAY);
+  epReward = rew; stepInEp = steps;
+  agentR=r; agentC=c;
 
-  // Show goal marker
-  const goalEl = $(`cell-${er}-${ec}`);
-  if (goalEl) {
-    const arrowEl = document.createElement('span');
-    arrowEl.className   = 'cell-arrow';
-    arrowEl.textContent = '🏁';
-    goalEl.appendChild(arrowEl);
-    const valEl = document.createElement('span');
-    valEl.className   = 'cell-value';
-    valEl.textContent = '1.00';
-    goalEl.appendChild(valEl);
+  // batch several episodes before rendering
+  const BATCH = 10;
+  if (episodeNum % BATCH === 0 || episodeNum >= MAX_EPISODES) {
+    refreshArrows();
+    refreshHeatmap();
+    renderAgent();
+    updateStatsPanel();
+    animTimer = setTimeout(() => {
+      clearAgentCell(agentR, agentC);
+      if ($('speed').value === 'turbo') runEpisodeFast();
+      else { beginEpisode(); }
+    }, 40);
+  } else {
+    runEpisodeFast();
   }
+}
 
-  // Show info panel
+function finishTraining() {
+  animRunning = false;
+  clearAgentCell(agentR, agentC);
+  refreshArrows();
+  refreshHeatmap();
+  setButtonState('done');
+  $('status-bar').innerHTML =
+    `✅ Training complete! ${successCount}/${MAX_EPISODES} episodes reached the Goal.`;
+
   const panel = $('info-panel');
   panel.style.display = 'block';
+  const rate = ((successCount/MAX_EPISODES)*100).toFixed(1);
   panel.innerHTML = `
-    <h2>📊 Random Policy Summary</h2>
+    <h2>🏆 Q-Learning Complete</h2>
     <ul>
-      <li>Grid size: <strong>${n} × ${n}</strong></li>
-      <li>Start: <strong>${startPos}</strong> &nbsp;|&nbsp; Goal: <strong>${endPos}</strong></li>
-      <li>Obstacles: <strong>${blockPos.map(([r,c])=>`(${r},${c})`).join(', ')}</strong></li>
-      <li>Arrows show a uniformly random action per cell.</li>
-      <li>Numbers estimate the expected discounted return (γ = 0.9) under the random policy via Monte-Carlo rollouts.</li>
-    </ul>
-  `;
+      <li>Episodes: <strong>${MAX_EPISODES}</strong></li>
+      <li>Success rate: <strong>${rate}%</strong></li>
+      <li>Final ε: <strong>${epsilon.toFixed(3)}</strong></li>
+      <li>Arrows now show the <em>learned greedy policy</em>.</li>
+      <li>Cell brightness reflects learned state value (max-Q).</li>
+    </ul>`;
 }
 
-/* ---------------------------------------------------------------
-   Clear policy arrows / values
---------------------------------------------------------------- */
-function clearPolicy() {
-  document.querySelectorAll('.cell-arrow, .cell-value').forEach(el => el.remove());
-  $('info-panel').style.display = 'none';
+function stopAnimation() {
+  animRunning = false; paused = false;
+  if (animTimer) { clearTimeout(animTimer); animTimer = null; }
 }
 
-/* ---------------------------------------------------------------
-   Initialise on page load
---------------------------------------------------------------- */
+function pauseResume() {
+  if (!animRunning) return;
+  paused = !paused;
+  $('btn-pause').textContent = paused ? '▶ Resume' : '⏸ Pause';
+  if (!paused) scheduleStep();
+}
+
+function resetAll() {
+  stopAnimation();
+  buildGrid();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDERING HELPERS
+══════════════════════════════════════════════════════════════ */
+function renderAgent() {
+  const el = $(`cell-${agentR}-${agentC}`);
+  if (!el) return;
+  if (!el.classList.contains('start') && !el.classList.contains('goal') &&
+      !el.classList.contains('obstacle')) {
+    el.classList.add('agent');
+  }
+}
+
+function clearAgentCell(r, c) {
+  const el = $(`cell-${r}-${c}`);
+  if (el) el.classList.remove('agent');
+}
+
+/* Refresh policy arrows for all free cells based on current Q-table */
+function refreshArrows() {
+  const goalKey = endPos;
+  const blockSet = new Set(blockPos.map(([a,b])=>`${a},${b}`));
+  for (let r=0; r<n; r++) {
+    for (let c=0; c<n; c++) {
+      const key=`${r},${c}`;
+      const el=$(`cell-${r}-${c}`);
+      if (!el) continue;
+      let a = el.querySelector('.cell-arrow');
+      if (!a) { a=document.createElement('span'); a.className='cell-arrow'; el.appendChild(a); }
+      if (key===goalKey)       { a.textContent='🏁'; }
+      else if(blockSet.has(key)){ a.textContent=''; }
+      else { a.textContent = bestAction(r,c); }
+    }
+  }
+}
+
+/* Subtle heatmap tint based on max-Q value */
+function refreshHeatmap() {
+  const blockSet = new Set(blockPos.map(([a,b])=>`${a},${b}`));
+  // find max Q across all cells for normalisation
+  let maxV=-Infinity, minV=Infinity;
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+    const k=`${r},${c}`;
+    if(blockSet.has(k)||k===endPos) continue;
+    const v=maxQ(r,c);
+    if(v>maxV) maxV=v; if(v<minV) minV=v;
+  }
+  const range = maxV-minV || 1;
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+    const k=`${r},${c}`;
+    const el=$(`cell-${r}-${c}`);
+    if(!el||blockSet.has(k)||k===startPos||k===endPos) continue;
+    const v=maxQ(r,c);
+    const t=((v-minV)/range);  // 0..1
+    // map to a subtle teal tint
+    const alpha = 0.06 + t*0.28;
+    el.style.background=`rgba(96,165,250,${alpha.toFixed(3)})`;
+    // small value label
+    let val=el.querySelector('.cell-value');
+    if(!val){val=document.createElement('span');val.className='cell-value';el.appendChild(val);}
+    val.textContent=v.toFixed(2);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATS PANEL
+══════════════════════════════════════════════════════════════ */
+function showStats() { $('stats-panel').style.display='flex'; }
+function hideStats() { $('stats-panel').style.display='none'; }
+
+function updateStatsPanel() {
+  const rate = episodeNum ? ((successCount/episodeNum)*100).toFixed(1) : '0.0';
+  $('stat-episode').textContent   = `${episodeNum} / ${MAX_EPISODES}`;
+  $('stat-step').textContent      = stepInEp;
+  $('stat-epsilon').textContent   = epsilon.toFixed(3);
+  $('stat-success').textContent   = `${rate}%`;
+  $('stat-outcome').textContent   = lastOutcome;
+  // progress bar
+  const pct = Math.min((episodeNum/MAX_EPISODES)*100,100);
+  $('progress-bar').style.width   = pct+'%';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RANDOM POLICY (baseline)
+══════════════════════════════════════════════════════════════ */
+function showRandomPolicy() {
+  if (phase !== 'done') {
+    alert('Please finish configuring the grid first.'); return;
+  }
+  clearOverlays();
+  const blockSet  = new Set(blockPos.map(([r,c])=>`${r},${c}`));
+  for (let r=0;r<n;r++) for(let c=0;c<n;c++){
+    const key=`${r},${c}`, el=$(`cell-${r}-${c}`);
+    let a=el.querySelector('.cell-arrow');
+    if(!a){a=document.createElement('span');a.className='cell-arrow';el.appendChild(a);}
+    if(key===endPos)       { a.textContent='🏁'; continue; }
+    if(blockSet.has(key))  { a.textContent='';  continue; }
+    a.textContent=ARROW_KEYS[Math.floor(Math.random()*4)];
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTON STATE MANAGEMENT
+══════════════════════════════════════════════════════════════ */
+function setButtonState(state) {
+  const btnRun   = $('btn-run');
+  const btnPause = $('btn-pause');
+  if (state==='idle') {
+    btnRun.disabled=false; btnRun.textContent='▶ Run Q-Learning';
+    btnPause.disabled=true; btnPause.textContent='⏸ Pause';
+  } else if(state==='running') {
+    btnRun.disabled=true;
+    btnPause.disabled=false; btnPause.textContent='⏸ Pause';
+  } else if(state==='done') {
+    btnRun.disabled=false; btnRun.textContent='↺ Retrain';
+    btnPause.disabled=true;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CLEAR OVERLAYS
+══════════════════════════════════════════════════════════════ */
+function clearOverlays() {
+  document.querySelectorAll('.cell-arrow,.cell-value').forEach(e=>e.remove());
+  document.querySelectorAll('.cell').forEach(el=>{
+    el.classList.remove('agent');
+    el.style.background='';
+  });
+  $('info-panel').style.display='none';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', () => {
   buildGrid();
   $('grid-size').addEventListener('change', buildGrid);
