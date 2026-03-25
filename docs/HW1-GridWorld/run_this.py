@@ -3,15 +3,16 @@ run_this.py
 -----------
 Training script for Q-Learning on the GridWorld.
 
+HW 變化 applied:
+  1. Agent stochastic policy p(a|s)   → Boltzmann policy with temperature τ
+  2. Stochastic reward  p(r|s,a)      → Gaussian noise on rewards
+  3. Stochastic transition p(s'|s,a)  → slip probability (noise)
+
 Usage (called by app.py via subprocess):
     python run_this.py <n> <start_row> <start_col> <end_row> <end_col> <block_list>
 
   where <block_list> is a JSON-encoded list of [row, col] pairs, e.g.
       '[[1,2],[3,4]]'
-
-The script runs a fixed number of episodes, prints a simple text
-visualisation of the grid after each episode, and exits when training
-is complete.
 
 Console output shows:
   S  = agent / start
@@ -34,10 +35,17 @@ from RL_brain import QLearningTable
 # Configuration
 # ------------------------------------------------------------------
 
-MAX_EPISODES = 100   # number of training episodes
-MAX_STEPS    = 200   # max steps per episode (prevents infinite loops)
-RENDER_EVERY = 10    # print the grid every N episodes
-SLEEP_SEC    = 0.05  # pause between rendered steps (seconds)
+MAX_EPISODES  = 100    # number of training episodes
+MAX_STEPS     = 200    # max steps per episode
+RENDER_EVERY  = 10     # print the grid every N episodes
+SLEEP_SEC     = 0.05   # pause between rendered steps (seconds)
+
+# Stochastic MDP hyper-parameters (HW 變化)
+TRANS_NOISE   = 0.1    # p(s'|s,a) slip probability
+REWARD_NOISE  = 0.1    # p(r|s,a)  reward Gaussian std-dev
+INIT_TEMP     = 1.0    # τ initial Boltzmann temperature
+TEMP_MIN      = 0.1    # τ floor
+TEMP_DECAY    = 0.995  # τ decay per episode
 
 
 # ------------------------------------------------------------------
@@ -91,61 +99,80 @@ def run(n, start_pos, end_pos, block_pos):
     end_pos   : (row, col)
     block_pos : list of (row, col)
     """
-    # Build environment
+    # Build stochastic environment (HW 變化 2 & 3)
     env = GridWorld(n=n,
                     start_pos=start_pos,
                     end_pos=end_pos,
-                    block_pos=block_pos)
+                    block_pos=block_pos,
+                    noise=TRANS_NOISE,
+                    reward_noise=REWARD_NOISE)
 
-    # Build Q-Learning agent
-    RL = QLearningTable(actions=GridWorld.ACTION_LIST)
+    # Build Q-Learning agent with Boltzmann policy (HW 變化 1)
+    RL = QLearningTable(
+        actions=GridWorld.ACTION_LIST,
+        temperature=INIT_TEMP,
+        temp_min=TEMP_MIN,
+        temp_decay=TEMP_DECAY,
+    )
 
-    print(f"=== GridWorld Q-Learning ===")
-    print(f"Grid size   : {n}×{n}")
-    print(f"Start       : {start_pos}")
-    print(f"Goal        : {end_pos}")
-    print(f"Obstacles   : {block_pos}")
-    print(f"Episodes    : {MAX_EPISODES}\n")
+    print(f"=== GridWorld Q-Learning (Stochastic MDP) ===")
+    print(f"Grid size        : {n}×{n}")
+    print(f"Start            : {start_pos}")
+    print(f"Goal             : {end_pos}")
+    print(f"Obstacles        : {block_pos}")
+    print(f"Episodes         : {MAX_EPISODES}")
+    print(f"Policy           : Boltzmann (τ₀={INIT_TEMP}, min={TEMP_MIN}, decay={TEMP_DECAY})")
+    print(f"Transition noise : {TRANS_NOISE} (slip probability)")
+    print(f"Reward noise σ  : {REWARD_NOISE} (Gaussian std-dev)\n")
+
+    successes = 0
 
     for episode in range(MAX_EPISODES):
-        # Reset environment at the start of each episode
-        state = env.reset()
+        state      = env.reset()
         step_count = 0
         total_reward = 0.0
 
         should_render = (episode % RENDER_EVERY == 0) or (episode == MAX_EPISODES - 1)
 
         while True:
-            # (Optional) render current frame
             if should_render:
-                print(f"--- Episode {episode + 1}, Step {step_count + 1} ---")
+                print(f"--- Episode {episode + 1}, Step {step_count + 1} | τ={RL.tau:.3f} ---")
                 render_grid(env, env.get_current_pos())
                 time.sleep(SLEEP_SEC)
 
-            # Agent chooses an action
             action = RL.choose_action(state)
-
-            # Environment responds
             next_state, reward, done = env.step(action)
             total_reward += reward
 
-            # Q-Learning update
             if done:
                 RL.learn(state, action, reward, 'terminal')
             else:
                 RL.learn(state, action, reward, next_state)
 
-            # Advance to next state
-            state = next_state
+            state      = next_state
             step_count += 1
 
             if done or step_count >= MAX_STEPS:
-                outcome = "GOAL" if reward == 1 else ("OBSTACLE" if reward == -1 else "TIMEOUT")
+                # Determine outcome by checking position vs goal/obstacle
+                pos = tuple(env.get_current_pos())
+                if pos == tuple(env.end_pos):
+                    outcome = "GOAL"
+                    successes += 1
+                elif pos in [tuple(b) for b in env.block_pos]:
+                    outcome = "OBSTACLE"
+                else:
+                    outcome = "TIMEOUT"
+
                 print(f"Episode {episode + 1:>4d} | Steps: {step_count:>4d} | "
-                      f"Reward: {total_reward:+.2f} | Outcome: {outcome}")
+                      f"Reward: {total_reward:+.2f} | τ: {RL.tau:.3f} | Outcome: {outcome}")
                 break
 
-    print("\n=== Training Complete ===")
+        # Decay temperature at end of episode
+        RL.decay_temperature()
+
+    success_rate = successes / MAX_EPISODES * 100
+    print(f"\n=== Training Complete ===")
+    print(f"Success rate: {successes}/{MAX_EPISODES} ({success_rate:.1f}%)")
     print("Final Q-table:")
     print(RL.q_table.to_string())
 

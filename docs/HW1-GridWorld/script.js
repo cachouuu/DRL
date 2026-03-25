@@ -1,29 +1,29 @@
 /**
  * docs/HW1-GridWorld/script.js
  * ------------------------------------------------
- * Static GitHub Pages demo — GridWorld Q-Learning
+ * Static GitHub Pages demo — GridWorld Q-Learning (Stochastic MDP)
  *
- * Features:
- *  • Grid setup: Start / Goal / Obstacles via clicks
- *  • ▶ Run Q-Learning: live animated training
- *    – Agent moves step-by-step on the grid
- *    – Q-table updates after every step (ε-greedy + Bellman)
- *    – Policy arrows refresh to reflect current Q-table
- *    – Cell background tinted by max-Q value
- *    – Stats panel: Episode, Step, ε, Success rate, Path length
- *  • Speed control: Slow / Normal / Fast / Turbo
- *  • ⏸ Pause / ▶ Resume
- *  • Show Random Policy (baseline comparison)
+ * HW 變化 applied:
+ *  1. Agent stochastic policy p(a|s)
+ *       → Boltzmann (softmax) policy: p(a|s) ∝ exp(Q(s,a)/τ)
+ *  2. Env random variable reward p(r|s,a)
+ *       → Gaussian noise N(0,σ) added to every reward
+ *  3. Env random variable next state p(s'|s,a)
+ *       → With probability transNoise the action slips to a random one
+ *
+ *  Additional interactive controls:
+ *  • Transition Noise slider — controls slip probability
+ *  • Reward Noise σ slider   — controls reward std-dev
  */
 
 /* ═══════════════════════════════════════════════════════════════
    CONFIG
 ══════════════════════════════════════════════════════════════ */
-const ALPHA        = 0.1;    // learning rate
-const GAMMA_QL     = 0.9;    // discount factor
-const EPSILON_START= 0.9;    // initial ε
-const EPSILON_MIN  = 0.05;   // floor ε
-const EPSILON_DECAY= 0.995;  // per-episode decay
+const ALPHA       = 0.1;    // learning rate α
+const GAMMA_QL    = 0.9;    // discount factor γ
+const TAU_START   = 1.0;    // initial Boltzmann temperature τ  [HW 變化 1]
+const TAU_MIN     = 0.1;    // floor τ
+const TAU_DECAY   = 0.995;  // per-episode decay
 const MAX_EPISODES = 300;
 const MAX_STEPS    = 300;
 
@@ -31,6 +31,13 @@ const SPEED_MAP = { slow: 350, normal: 80, fast: 12, turbo: 0 };
 
 const ARROW_KEYS  = ['↑', '↓', '←', '→'];
 const DELTAS      = { '↑':[-1,0], '↓':[1,0], '←':[0,-1], '→':[0,1] };
+
+/* Box-Muller Gaussian N(0,1) */
+function randGaussian() {
+  const u = 1 - Math.random();
+  const v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
 
 /* ═══════════════════════════════════════════════════════════════
    GRID SETUP STATE
@@ -48,7 +55,7 @@ let blockPos     = [];     // [[r,c],...]
    Q-LEARNING STATE
 ══════════════════════════════════════════════════════════════ */
 let qTable       = {};     // { "r,c": { ↑:0, ↓:0, ←:0, →:0 } }
-let epsilon      = EPSILON_START;
+let tau          = TAU_START;   // current Boltzmann temperature τ  [HW 變化 1]
 let episodeNum   = 0;
 let successCount = 0;
 let animRunning  = false;
@@ -71,7 +78,7 @@ function buildGrid() {
   endPos       = null;
   blockPos     = [];
   qTable       = {};
-  epsilon      = EPSILON_START;
+  tau          = TAU_START;   // reset temperature
   episodeNum   = 0;
   successCount = 0;
 
@@ -183,6 +190,33 @@ function initState(key) {
 function getQ(r, c, a) { const k=`${r},${c}`; initState(k); return qTable[k][a]; }
 function setQ(r, c, a, v){ const k=`${r},${c}`; initState(k); qTable[k][a]=v; }
 function maxQ(r, c)  { initState(`${r},${c}`); return Math.max(...ARROW_KEYS.map(a=>getQ(r,c,a))); }
+
+/**
+ * HW 變化 1 – Boltzmann (softmax) stochastic policy p(a|s)
+ *
+ * p(a|s) = exp(Q(s,a) / τ) / Σ_a' exp(Q(s,a') / τ)
+ *
+ * High τ → near-uniform (exploration)
+ * Low  τ → near-greedy  (exploitation)
+ */
+function chooseAction(r, c) {
+  initState(`${r},${c}`);
+  const qVals   = ARROW_KEYS.map(a => getQ(r, c, a));
+  const qMax    = Math.max(...qVals);
+  const expQ    = qVals.map(q => Math.exp((q - qMax) / Math.max(tau, 1e-8)));
+  const sumExp  = expQ.reduce((s, v) => s + v, 0);
+  const probs   = expQ.map(e => e / sumExp);
+
+  // sample from the distribution
+  let rnd = Math.random(), cumulative = 0;
+  for (let i = 0; i < ARROW_KEYS.length; i++) {
+    cumulative += probs[i];
+    if (rnd <= cumulative) return ARROW_KEYS[i];
+  }
+  return ARROW_KEYS[ARROW_KEYS.length - 1];
+}
+
+/** Deterministic greedy action for displaying the final policy arrow */
 function bestAction(r, c) {
   initState(`${r},${c}`);
   const vals = ARROW_KEYS.map(a=>getQ(r,c,a));
@@ -191,24 +225,31 @@ function bestAction(r, c) {
   return ties[Math.floor(Math.random()*ties.length)];
 }
 
-function chooseAction(r, c, eps) {
-  return Math.random() < eps
-    ? bestAction(r, c)
-    : ARROW_KEYS[Math.floor(Math.random()*4)];
-}
-
 /* ═══════════════════════════════════════════════════════════════
-   ENV STEP
+   ENV STEP  (stochastic transition + stochastic reward)
 ══════════════════════════════════════════════════════════════ */
 function envStep(r, c, action) {
+  // HW 變化 3: stochastic transition p(s'|s,a) — slip probability
+  const transNoise = parseFloat($('trans-noise').value) || 0;
+  if (Math.random() < transNoise) {
+    action = ARROW_KEYS[Math.floor(Math.random() * 4)];
+  }
+
   const [dr,dc] = DELTAS[action];
   const nr = Math.max(0, Math.min(n-1, r+dr));
   const nc = Math.max(0, Math.min(n-1, c+dc));
   const key = `${nr},${nc}`;
   const blockSet = new Set(blockPos.map(([a,b])=>`${a},${b}`));
-  let reward=0, done=false;
-  if (key===endPos)          { reward= 1; done=true; }
-  else if(blockSet.has(key)) { reward=-1; done=true; }
+
+  // Base deterministic reward
+  let baseReward = 0, done = false;
+  if (key === endPos)          { baseReward =  1; done = true; }
+  else if (blockSet.has(key))  { baseReward = -1; done = true; }
+
+  // HW 變化 2: stochastic reward p(r|s,a) — Gaussian noise
+  const rewardSigma = parseFloat($('reward-noise').value) || 0;
+  const reward = baseReward + randGaussian() * rewardSigma;
+
   return { nr, nc, reward, done };
 }
 
@@ -223,7 +264,7 @@ function startAnimation() {
     alert('Please finish setting up the grid first.'); return;
   }
   stopAnimation();
-  qTable = {}; epsilon = EPSILON_START; episodeNum = 0;
+  qTable = {}; tau = TAU_START; episodeNum = 0;
   successCount = 0; lastOutcome = '';
   clearOverlays();
   showStats();
@@ -258,7 +299,7 @@ function scheduleStep() {
 function doStep() {
   if (!animRunning || paused) return;
 
-  const action  = chooseAction(agentR, agentC, epsilon);
+  const action  = chooseAction(agentR, agentC);
   const { nr, nc, reward, done } = envStep(agentR, agentC, action);
 
   // Q-learning update
@@ -277,12 +318,11 @@ function doStep() {
   refreshHeatmap();
 
   if (done || stepInEp >= MAX_STEPS) {
-    lastOutcome = done && reward===1 ? 'GOAL 🏆' : done ? 'OBSTACLE 💥' : 'TIMEOUT ⏱';
-    if (done && reward===1) successCount++;
-    epsilon = Math.max(EPSILON_MIN, epsilon * EPSILON_DECAY);
+    lastOutcome = done && reward > 0.5 ? 'GOAL 🏆' : done ? 'OBSTACLE 💥' : 'TIMEOUT ⏱';
+    if (done && reward > 0.5) successCount++;
+    tau = Math.max(TAU_MIN, tau * TAU_DECAY);   // decay temperature
     updateStatsPanel();
     clearAgentCell(agentR, agentC);
-    // short pause between episodes
     const delay = SPEED_MAP[$('speed').value] || 80;
     animTimer = setTimeout(beginEpisode, Math.max(delay, 120));
   } else {
@@ -300,20 +340,20 @@ function runEpisodeFast() {
   let r=sr, c=sc, steps=0, outcome='TIMEOUT ⏱', rew=0;
 
   while (steps < MAX_STEPS) {
-    const action = chooseAction(r, c, epsilon);
+    const action = chooseAction(r, c);
     const { nr, nc, reward, done } = envStep(r, c, action);
     const oldQ   = getQ(r, c, action);
     const tgt    = done ? reward : reward + GAMMA_QL * maxQ(nr, nc);
     setQ(r, c, action, oldQ + ALPHA*(tgt - oldQ));
     r=nr; c=nc; rew+=reward; steps++;
     if (done) {
-      outcome = reward===1 ? 'GOAL 🏆' : 'OBSTACLE 💥';
-      if (reward===1) successCount++;
+      outcome = reward > 0.5 ? 'GOAL 🏆' : 'OBSTACLE 💥';
+      if (reward > 0.5) successCount++;
       break;
     }
   }
   lastOutcome = outcome;
-  epsilon = Math.max(EPSILON_MIN, epsilon * EPSILON_DECAY);
+  tau = Math.max(TAU_MIN, tau * TAU_DECAY);   // decay temperature
   epReward = rew; stepInEp = steps;
   agentR=r; agentC=c;
 
@@ -347,12 +387,15 @@ function finishTraining() {
   panel.style.display = 'block';
   const rate = ((successCount/MAX_EPISODES)*100).toFixed(1);
   panel.innerHTML = `
-    <h2>🏆 Q-Learning Complete</h2>
+    <h2>🏆 Q-Learning Complete (Stochastic MDP)</h2>
     <ul>
       <li>Episodes: <strong>${MAX_EPISODES}</strong></li>
       <li>Success rate: <strong>${rate}%</strong></li>
-      <li>Final ε: <strong>${epsilon.toFixed(3)}</strong></li>
-      <li>Arrows now show the <em>learned greedy policy</em>.</li>
+      <li>Final τ: <strong>${tau.toFixed(3)}</strong></li>
+      <li>Policy: <strong>Boltzmann softmax</strong> p(a|s) ∝ exp(Q/τ)</li>
+      <li>Transition noise: <strong>${$('trans-noise').value}</strong> (slip probability)</li>
+      <li>Reward noise σ: <strong>${$('reward-noise').value}</strong></li>
+      <li>Arrows show the <em>greedy policy</em> π*(s)=argmax Q(s,a).</li>
       <li>Cell brightness reflects learned state value (max-Q).</li>
     </ul>`;
 }
@@ -447,10 +490,9 @@ function updateStatsPanel() {
   const rate = episodeNum ? ((successCount/episodeNum)*100).toFixed(1) : '0.0';
   $('stat-episode').textContent   = `${episodeNum} / ${MAX_EPISODES}`;
   $('stat-step').textContent      = stepInEp;
-  $('stat-epsilon').textContent   = epsilon.toFixed(3);
+  $('stat-tau').textContent       = tau.toFixed(3);   // τ replaces ε
   $('stat-success').textContent   = `${rate}%`;
   $('stat-outcome').textContent   = lastOutcome;
-  // progress bar
   const pct = Math.min((episodeNum/MAX_EPISODES)*100,100);
   $('progress-bar').style.width   = pct+'%';
 }
