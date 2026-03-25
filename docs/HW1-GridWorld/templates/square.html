@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GridWorld – Configure & Train</title>
+    <style>
+        /* ======================================================
+       Global reset & typography
+    ====================================================== */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e0e0e0;
+            padding: 30px 20px 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 4px;
+            background: linear-gradient(90deg, #a78bfa, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #9ca3af;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        /* ======================================================
+       Instructions panel
+    ====================================================== */
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 22px;
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            flex-shrink: 0;
+        }
+
+        .dot-start {
+            background: #22c55e;
+        }
+
+        .dot-goal {
+            background: #ef4444;
+        }
+
+        .dot-obstacle {
+            background: #6b7280;
+        }
+
+        .dot-normal {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* ======================================================
+       Status bar
+    ====================================================== */
+        #status-bar {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 10px 20px;
+            margin-bottom: 18px;
+            font-size: 0.9rem;
+            color: #d1d5db;
+            text-align: center;
+            min-width: 300px;
+        }
+
+        /* ======================================================
+       Flexbox grid
+    ====================================================== */
+        #grid-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 28px;
+        }
+
+        .grid-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        /* Individual cell */
+        .cell {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.07);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s, transform 0.1s, border-color 0.15s;
+            position: relative;
+        }
+
+        .cell:hover {
+            border-color: rgba(167, 139, 250, 0.6);
+            transform: scale(1.06);
+        }
+
+        /* Cell state colours */
+        .cell.start {
+            background: #16a34a;
+            border-color: #22c55e;
+            color: #fff;
+        }
+
+        .cell.goal {
+            background: #b91c1c;
+            border-color: #ef4444;
+            color: #fff;
+        }
+
+        .cell.obstacle {
+            background: #374151;
+            border-color: #6b7280;
+            color: #9ca3af;
+        }
+
+        /* ======================================================
+       Buttons row
+    ====================================================== */
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 18px;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            color: #fff;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #4b5563, #1f2937);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-train {
+            background: linear-gradient(135deg, #7c3aed, #3b82f6);
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.45);
+        }
+
+        .btn-back {
+            background: linear-gradient(135deg, #475569, #1e293b);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+        }
+
+        /* ======================================================
+       Hidden form (submitted programmatically)
+    ====================================================== */
+        #train-form {
+            display: none;
+        }
+
+        /* ======================================================
+       Training output
+    ====================================================== */
+        #output-panel {
+            width: 100%;
+            max-width: 700px;
+        }
+
+        #output-panel h2 {
+            font-size: 1.1rem;
+            color: #a78bfa;
+            margin-bottom: 10px;
+        }
+
+        pre {
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            font-size: 0.78rem;
+            line-height: 1.6;
+            color: #d1fae5;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🗺️ GridWorld Setup</h1>
+    <p class="subtitle">
+        Click cells to set <b>Start</b>, <b>Goal</b>, and <b>Obstacles</b> — then launch training.
+    </p>
+
+    <!-- ── Legend ─────────────────────────────────────────── -->
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-dot dot-start"></div> Start (1st click)
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot dot-goal"></div> Goal (2nd click)
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot dot-obstacle"></div>Obstacle (next {{ n-2 }} clicks)
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot dot-normal"></div> Free cell
+        </div>
+    </div>
+
+    <!-- ── Status bar ─────────────────────────────────────── -->
+    <div id="status-bar">Click a cell to set the <strong>Start</strong> position.</div>
+
+    <!-- ── Flexbox grid ───────────────────────────────────── -->
+    <div id="grid-container">
+        {% for r in range(n) %}
+        <div class="grid-row">
+            {% for c in range(n) %}
+            <!-- Each cell shows its row,col number and is identified by data attributes -->
+            <div class="cell" id="cell-{{ r }}-{{ c }}" data-row="{{ r }}" data-col="{{ c }}"
+                onclick="cellClicked({{ r }}, {{ c }})">
+                {{ r }},{{ c }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- ── Buttons ────────────────────────────────────────── -->
+    <div class="btn-row">
+        <button class="btn btn-reset" onclick="resetGrid()">↺ Reset</button>
+        <button class="btn btn-train" onclick="startTraining()">▶ Start Training</button>
+        <button class="btn btn-back" onclick="window.location.href='/'">← Back</button>
+    </div>
+
+    <!-- ── Hidden form submitted to /train ───────────────── -->
+    <!--
+    Hidden inputs store the grid configuration.
+    They are populated by JavaScript before form submission.
+  -->
+    <form id="train-form" action="/train" method="post">
+        <input type="hidden" name="n" id="f-n" value="{{ n }}" />
+        <input type="hidden" name="startPos" id="f-startPos" />
+        <input type="hidden" name="endPos" id="f-endPos" />
+        <input type="hidden" name="blockPos" id="f-blockPos" />
+    </form>
+
+    <!-- ── Training output (only shown after training) ───── -->
+    {% if training_output %}
+    <div id="output-panel">
+        <h2>📊 Training Output</h2>
+        <pre>{{ training_output }}</pre>
+    </div>
+    {% endif %}
+
+
+
+    <!-- ── Grid interaction JavaScript ───────────────────── -->
+    <script>
+        // -------------------------------------------------------
+        // State
+        // -------------------------------------------------------
+        const gridSize = {{ n }};   // grid dimension
+        const maxObstacles = gridSize - 2;    // number of obstacles required
+
+        let phase = 'start';   // 'start' → 'goal' → 'obstacle' → 'done'
+        let startPos = null;      // "row,col"
+        let endPos = null;      // "row,col"
+        let blockPos = [];        // array of [row, col]
+
+        // -------------------------------------------------------
+        // Cell clicked handler
+        // -------------------------------------------------------
+        function cellClicked(row, col) {
+            const key = `${row},${col}`;
+
+            if (phase === 'start') {
+                // ── Set start ──────────────────────────────────────
+                markCell(row, col, 'start');
+                startPos = key;
+                phase = 'goal';
+
+            } else if (phase === 'goal') {
+                // ── Set goal (must differ from start) ─────────────
+                if (key === startPos) {
+                    alert('Goal must be different from the Start cell.');
+                    return;
+                }
+                markCell(row, col, 'goal');
+                endPos = key;
+                phase = 'obstacle';
+
+            } else if (phase === 'obstacle') {
+                // ── Add obstacle ───────────────────────────────────
+                if (key === startPos || key === endPos) {
+                    alert('Obstacle cannot overlap with Start or Goal.');
+                    return;
+                }
+                // Toggle off if already an obstacle
+                const el = document.getElementById(`cell-${row}-${col}`);
+                if (el.classList.contains('obstacle')) {
+                    el.classList.remove('obstacle');
+                    blockPos = blockPos.filter(([r, c]) => !(r === row && c === col));
+                } else {
+                    if (blockPos.length >= maxObstacles) {
+                        alert(`You can only place ${maxObstacles} obstacle(s) on a ${gridSize}×${gridSize} grid.`);
+                        return;
+                    }
+                    markCell(row, col, 'obstacle');
+                    blockPos.push([row, col]);
+                    if (blockPos.length === maxObstacles) phase = 'done';
+                }
+
+            } else {
+                // Done – allow toggling obstacles off/on
+                const el = document.getElementById(`cell-${row}-${col}`);
+                if (el.classList.contains('obstacle')) {
+                    el.classList.remove('obstacle');
+                    blockPos = blockPos.filter(([r, c]) => !(r === row && c === col));
+                    phase = 'obstacle';
+                }
+            }
+
+            updateStatus();
+        }
+
+        // -------------------------------------------------------
+        // Apply a CSS class (colour) to a cell
+        // -------------------------------------------------------
+        function markCell(row, col, type) {
+            const el = document.getElementById(`cell-${row}-${col}`);
+            el.classList.remove('start', 'goal', 'obstacle');
+            el.classList.add(type);
+        }
+
+        // -------------------------------------------------------
+        // Update the status bar message
+        // -------------------------------------------------------
+        function updateStatus() {
+            const bar = document.getElementById('status-bar');
+            const remaining = maxObstacles - blockPos.length;
+
+            if (phase === 'start') {
+                bar.innerHTML = 'Click a cell to set the <strong>Start</strong> position.';
+            } else if (phase === 'goal') {
+                bar.innerHTML = 'Click a cell to set the <strong>Goal</strong> position.';
+            } else if (phase === 'obstacle') {
+                bar.innerHTML = `Click ${remaining} more cell(s) to place <strong>Obstacle(s)</strong>.`;
+            } else {
+                bar.innerHTML = '✅ All positions set! Press <strong>Start Training</strong> to begin.';
+            }
+        }
+
+        // -------------------------------------------------------
+        // Reset the grid to its initial state
+        // -------------------------------------------------------
+        function resetGrid() {
+            // Clear all cell classes
+            document.querySelectorAll('.cell').forEach(el => {
+                el.classList.remove('start', 'goal', 'obstacle');
+            });
+            phase = 'start';
+            startPos = null;
+            endPos = null;
+            blockPos = [];
+            updateStatus();
+        }
+
+        // -------------------------------------------------------
+        // Validate and submit the training form
+        // -------------------------------------------------------
+        function startTraining() {
+            if (!startPos) { alert('Please set a Start position.'); return; }
+            if (!endPos) { alert('Please set a Goal position.'); return; }
+            if (blockPos.length < maxObstacles) {
+                alert(`Please place all ${maxObstacles} obstacle(s). Currently: ${blockPos.length}.`);
+                return;
+            }
+
+            // Populate hidden inputs
+            document.getElementById('f-startPos').value = startPos;
+            document.getElementById('f-endPos').value = endPos;
+            document.getElementById('f-blockPos').value = JSON.stringify(blockPos);
+
+            // Submit to Flask
+            document.getElementById('train-form').submit();
+        }
+    </script>
+
+    <!-- ── Restore state after training (Jinja vars) ──────── -->
+    {% if start_pos %}
+    <script>
+        // Re-highlight cells that were configured before training was launched.
+        // This runs after the main script so n, phase, markCell, etc. are already defined.
+        const restoredStart = "{{ start_pos }}";
+        const restoredEnd = "{{ end_pos }}";
+        const restoredBlocks = {{ block_pos | tojson }};
+
+        window.addEventListener('DOMContentLoaded', function () {
+            if (restoredStart) {
+                const [sr, sc] = restoredStart.split(',').map(Number);
+                markCell(sr, sc, 'start');
+                startPos = `${sr},${sc}`;
+                phase = 'goal';
+            }
+            if (restoredEnd) {
+                const [er, ec] = restoredEnd.split(',').map(Number);
+                markCell(er, ec, 'goal');
+                endPos = `${er},${ec}`;
+                phase = 'obstacle';
+            }
+            if (restoredBlocks && restoredBlocks.length > 0) {
+                restoredBlocks.forEach(([br, bc]) => {
+                    markCell(br, bc, 'obstacle');
+                    blockPos.push([br, bc]);
+                });
+                if (blockPos.length >= maxObstacles) phase = 'done';
+            }
+            updateStatus();
+        });
+    </script>
+    {% endif %}
+
+</body>
+
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GridWorld Q-Learning — Demo</title>
+  <meta name="description" content="Static GitHub Pages demo of the GridWorld Q-Learning HW1 project. Configure an n×n grid and visualise a random policy with state values." />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+
+  <h1>🧭 GridWorld Q-Learning</h1>
+  <p class="subtitle">HW1 Static Demo &nbsp;|&nbsp; Reinforcement Learning</p>
+
+  <!-- ── Controls ──────────────────────────────── -->
+  <div class="controls">
+    <label for="grid-size">Grid Size (n × n)</label>
+    <select id="grid-size">
+      <option value="5" selected>5 × 5</option>
+      <option value="6">6 × 6</option>
+      <option value="7">7 × 7</option>
+      <option value="8">8 × 8</option>
+      <option value="9">9 × 9</option>
+    </select>
+  </div>
+
+  <!-- ── Legend ────────────────────────────────── -->
+  <div class="legend">
+    <div class="legend-item"><div class="dot dot-start"></div> Start (1st click)</div>
+    <div class="legend-item"><div class="dot dot-goal"></div> Goal (2nd click)</div>
+    <div class="legend-item"><div class="dot dot-obstacle"></div> Obstacle (next <span id="legend-obstacle-count">3</span> clicks)</div>
+    <div class="legend-item"><div class="dot dot-free"></div> Free cell</div>
+  </div>
+
+  <!-- ── Status bar ────────────────────────────── -->
+  <div id="status-bar">Click a cell to set the <strong>Start</strong> position.</div>
+
+  <!-- ── Grid ──────────────────────────────────── -->
+  <div id="grid-container"></div>
+
+  <!-- ── Buttons ───────────────────────────────── -->
+  <div class="btn-row">
+    <button class="btn btn-reset"  onclick="resetGrid()">↺ Reset</button>
+    <button class="btn btn-policy" onclick="showPolicy()">⚡ Show Random Policy</button>
+    <button class="btn btn-back"   onclick="window.location.href='../index.html'">← Home</button>
+  </div>
+
+  <!-- ── Info / result panel ───────────────────── -->
+  <div id="info-panel"></div>
+
+  <footer>
+    <p>
+      <a href="https://github.com/cachouuu/DRL" target="_blank">GitHub Repository</a>
+      &nbsp;·&nbsp;
+      Static demo — no server required.
+    </p>
+  </footer>
+
+  <script src="./script.js"></script>
+</body>
+</html>

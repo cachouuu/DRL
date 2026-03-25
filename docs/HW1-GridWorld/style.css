@@ -1,0 +1,201 @@
+/* =====================================================
+   docs/HW1-GridWorld/style.css
+   Static GitHub Pages demo – GridWorld Q-Learning
+   ===================================================== */
+
+/* ---------- Reset & Base ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-start:   #0f0c29;
+  --bg-mid:     #302b63;
+  --bg-end:     #24243e;
+  --accent-1:   #a78bfa;
+  --accent-2:   #60a5fa;
+  --btn-purple: #7c3aed;
+  --btn-blue:   #3b82f6;
+  --cell-size:  60px;
+  --cell-gap:   6px;
+  --radius:     10px;
+  --glass:      rgba(255,255,255,0.07);
+  --border:     rgba(255,255,255,0.15);
+}
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--bg-start), var(--bg-mid), var(--bg-end));
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #e0e0e0;
+  padding: 30px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ---------- Typography ---------- */
+h1 {
+  font-size: 2rem;
+  margin-bottom: 6px;
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 0.92rem;
+  color: #9ca3af;
+  margin-bottom: 26px;
+  text-align: center;
+}
+
+/* ---------- Controls ---------- */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.controls label {
+  font-size: 0.9rem;
+  color: var(--accent-1);
+  font-weight: 600;
+}
+
+.controls select {
+  padding: 8px 14px;
+  font-size: 0.95rem;
+  border: 1.5px solid rgba(167,139,250,0.4);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  color: #f3f4f6;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.controls select:focus { border-color: var(--accent-1); }
+
+/* ---------- Legend ---------- */
+.legend {
+  display: flex; gap: 18px; flex-wrap: wrap;
+  justify-content: center; margin-bottom: 18px; font-size: 0.82rem;
+}
+.legend-item { display: flex; align-items: center; gap: 7px; }
+.dot {
+  width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0;
+}
+.dot-start    { background: #22c55e; }
+.dot-goal     { background: #ef4444; }
+.dot-obstacle { background: #6b7280; }
+.dot-free     { background: var(--glass); border: 1px solid var(--border); }
+
+/* ---------- Status bar ---------- */
+#status-bar {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 20px;
+  margin-bottom: 18px;
+  font-size: 0.88rem;
+  color: #d1d5db;
+  text-align: center;
+  min-width: 300px;
+}
+
+/* ---------- Grid ---------- */
+#grid-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cell-gap);
+  margin-bottom: 26px;
+}
+.grid-row { display: flex; gap: var(--cell-gap); }
+
+.cell {
+  width:  var(--cell-size);
+  height: var(--cell-size);
+  border-radius: var(--radius);
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: var(--glass);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  transition: background 0.15s, transform 0.12s, border-color 0.15s;
+  overflow: hidden;
+}
+.cell:hover { border-color: rgba(167,139,250,0.6); transform: scale(1.06); }
+
+.cell.start    { background: #16a34a; border-color: #22c55e; color: #fff; }
+.cell.goal     { background: #b91c1c; border-color: #ef4444; color: #fff; }
+.cell.obstacle { background: #374151; border-color: #6b7280; color: #9ca3af; }
+
+/* value display inside cell */
+.cell-value {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.75);
+  position: absolute;
+  bottom: 4px;
+  right: 5px;
+}
+
+/* arrow overlay */
+.cell-arrow {
+  font-size: 1.1rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* ---------- Buttons ---------- */
+.btn-row {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  justify-content: center; margin-bottom: 18px;
+}
+.btn {
+  padding: 12px 26px;
+  font-size: 0.92rem; font-weight: 700;
+  border: none; border-radius: 12px; cursor: pointer;
+  color: #fff;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn:hover  { transform: translateY(-2px); }
+.btn:active { transform: translateY(0);    }
+
+.btn-reset  { background: linear-gradient(135deg,#4b5563,#1f2937); box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+.btn-policy { background: linear-gradient(135deg,var(--btn-purple),var(--btn-blue)); box-shadow: 0 4px 20px rgba(124,58,237,.45); }
+.btn-back   { background: linear-gradient(135deg,#475569,#1e293b); box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+
+/* ---------- Info panel ---------- */
+#info-panel {
+  margin-top: 16px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 18px 24px;
+  max-width: 500px;
+  width: 90%;
+  font-size: 0.82rem;
+  color: #d1fae5;
+  line-height: 1.7;
+  display: none;
+}
+#info-panel h2 { font-size: 1rem; color: var(--accent-1); margin-bottom: 10px; }
+
+/* ---------- Footer ---------- */
+footer {
+  margin-top: 40px;
+  font-size: 0.75rem;
+  color: #4b5563;
+  text-align: center;
+}
+footer a { color: #6b7280; text-decoration: none; }
+footer a:hover { color: var(--accent-1); }

@@ -1,97 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RDL Homework</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #0f172a;
-            --text: #f8fafc;
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --glass: rgba(255, 255, 255, 0.05);
-            --border: rgba(255, 255, 255, 0.1);
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DRL Homework</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --text: #f8fafc;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --glass: rgba(255, 255, 255, 0.05);
+      --border: rgba(255, 255, 255, 0.1);
+    }
 
-        body {
-            margin: 0;
-            font-family: 'Outfit', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
+    body {
+      margin: 0;
+      font-family: 'Outfit', sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+    }
 
-        .container {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 3rem;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            max-width: 400px;
-            width: 90%;
-            transition: transform 0.3s ease;
-        }
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 6px;
+      font-weight: 700;
+      background: linear-gradient(to right, #60a5fa, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+    }
 
-        .container:hover {
-            transform: translateY(-5px);
-        }
+    .subtitle {
+      font-size: 0.9rem;
+      color: #9ca3af;
+      margin-bottom: 48px;
+      text-align: center;
+    }
 
-        h1 {
-            font-size: 2rem;
-            margin-bottom: 2rem;
-            font-weight: 700;
-            background: linear-gradient(to right, #60a5fa, #a855f7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+    .card-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      max-width: 720px;
+    }
 
-        .link-card {
-            display: inline-block;
-            text-decoration: none;
-            color: white;
-            background-color: var(--primary);
-            padding: 0.75rem 1.5rem;
-            border-radius: 12px;
-            font-weight: 400;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
+    .card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 28px 32px;
+      width: 260px;
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    }
 
-        .link-card:hover {
-            background-color: var(--primary-hover);
-            transform: scale(1.05);
-            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
-        }
+    .card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(167, 139, 250, 0.5);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+    }
 
-        .link-card span {
-            display: block;
-            font-size: 0.9rem;
-            margin-top: 0.2rem;
-            opacity: 0.8;
-        }
-    </style>
+    .card-icon  { font-size: 2rem; margin-bottom: 12px; }
+    .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+    .card-desc  { font-size: 0.8rem; color: #9ca3af; line-height: 1.55; }
+    .card-link  { margin-top: 14px; font-size: 0.82rem; color: #a78bfa; font-weight: 600; }
+
+    footer {
+      margin-top: 56px;
+      font-size: 0.75rem;
+      color: #4b5563;
+      text-align: center;
+    }
+    footer a { color: #6b7280; text-decoration: none; }
+    footer a:hover { color: #a78bfa; }
+  </style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>RDL Homework</h1>
-        <a href="./L1-PersonalPage/" class="link-card">
-            L1-PersonalPage
-            <span>View Project →</span>
-        </a>
-    </div>
-</body>
+  <h1>📚 DRL Homework</h1>
+  <p class="subtitle">Deep Reinforcement Learning Assignments — GitHub Pages Demo</p>
 
+  <div class="card-grid">
+    <a class="card" href="./L1-PersonalPage/">
+      <div class="card-icon">🧑‍💻</div>
+      <div class="card-title">L1 — Personal Page</div>
+      <div class="card-desc">Simple personal web page demo.</div>
+      <span class="card-link">View Project →</span>
+    </a>
+
+    <a class="card" href="./HW1-GridWorld/">
+      <div class="card-icon">🧭</div>
+      <div class="card-title">HW1 — GridWorld Q-Learning</div>
+      <div class="card-desc">
+        Configure an n × n grid, place start / goal / obstacles,
+        and visualise a random policy with state-value estimates.
+      </div>
+      <span class="card-link">View Demo →</span>
+    </a>
+  </div>
+
+  <footer>
+    <p>
+      <a href="https://github.com/cachouuu/DRL" target="_blank">GitHub Repository</a>
+      &nbsp;·&nbsp; Static demo — no server required.
+    </p>
+  </footer>
+</body>
 </html>

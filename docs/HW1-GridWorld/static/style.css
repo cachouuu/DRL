@@ -1,0 +1,10 @@
+/*
+  static/style.css
+  ----------------
+  Shared stylesheet for Flask-served pages.
+  The Flask templates (index.html / square.html) already contain their
+  own inline <style> blocks for full self-containment, so this file
+  acts as an optional external sheet for any future refactoring.
+*/
+
+/* No additional rules required at this time. */
