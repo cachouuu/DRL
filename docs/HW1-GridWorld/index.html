@@ -12,6 +12,66 @@
   <h1>🧭 GridWorld Q-Learning</h1>
   <p class="subtitle">HW1 Interactive Demo &nbsp;|&nbsp; Watch the agent learn in real time</p>
 
+  <!-- ── Feature showcase ─────────────────────────── -->
+  <div class="feature-grid">
+    <div class="feature-card">
+      <span class="feature-icon">🟡</span>
+      <div>
+        <div class="feature-title">Live Agent</div>
+        <div class="feature-desc">A glowing yellow cell represents the agent, moving step-by-step through the grid so you can follow every decision.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📊</span>
+      <div>
+        <div class="feature-title">Real-Time Stats</div>
+        <div class="feature-desc">Episode count, steps taken, exploration rate ε, success rate, and last outcome are updated after every step.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">↑↓←→</span>
+      <div>
+        <div class="feature-title">Policy Arrows</div>
+        <div class="feature-desc">Each cell displays the current greedy action from the Q-table — watch arrows rotate as the agent learns a better path.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🌡️</span>
+      <div>
+        <div class="feature-title">Value Heatmap</div>
+        <div class="feature-desc">Cell brightness encodes the max-Q value: brighter cells are closer to the goal under the learned policy.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">⚡</span>
+      <div>
+        <div class="feature-title">Speed Control</div>
+        <div class="feature-desc">Choose from Slow (step-by-step) to Turbo (instant bulk training) — perfect for learning or quickly seeing the result.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">⏸</span>
+      <div>
+        <div class="feature-title">Pause &amp; Resume</div>
+        <div class="feature-desc">Freeze the simulation at any moment to inspect the current policy arrows and Q-values, then continue.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🎲</span>
+      <div>
+        <div class="feature-title">Random Policy</div>
+        <div class="feature-desc">Instantly overlay a uniformly random policy as a baseline — compare it side-by-side with what Q-learning learns.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🏆</span>
+      <div>
+        <div class="feature-title">Training Summary</div>
+        <div class="feature-desc">After 300 episodes a summary shows overall success rate, final ε, and confirms the learned greedy policy.</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Grid size + Speed controls ──────────────── -->
   <div class="controls">
     <label for="grid-size">Grid Size (n × n)</label>

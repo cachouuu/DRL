@@ -293,3 +293,54 @@ footer {
 }
 footer a { color: #6b7280; text-decoration: none; }
 footer a:hover { color: var(--accent-1); }
+
+/* ---------- Feature showcase grid ---------- */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 90%;
+  max-width: 640px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 520px) {
+  .feature-grid { grid-template-columns: 1fr; }
+}
+
+.feature-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.feature-card:hover {
+  border-color: rgba(167,139,250,0.45);
+  transform: translateY(-2px);
+}
+
+.feature-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.feature-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-1);
+  margin-bottom: 3px;
+  letter-spacing: 0.02em;
+}
+
+.feature-desc {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  line-height: 1.55;
+}
+
