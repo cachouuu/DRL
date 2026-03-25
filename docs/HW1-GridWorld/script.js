@@ -458,47 +458,6 @@ function updateStatsPanel() {
 /* ═══════════════════════════════════════════════════════════════
    RANDOM POLICY (baseline)
 ══════════════════════════════════════════════════════════════ */
-/* ═══════════════════════════════════════════════════════════════
-   SHOW RESULT — run all episodes instantly, display final policy
-══════════════════════════════════════════════════════════════ */
-function showResult() {
-  if (phase !== 'done') {
-    alert('Please finish configuring the grid first.'); return;
-  }
-
-  stopAnimation();
-  qTable = {}; epsilon = EPSILON_START;
-  episodeNum = 0; successCount = 0; lastOutcome = '';
-  clearOverlays();
-  showStats();
-
-  // Run all MAX_EPISODES synchronously (no rendering mid-way)
-  for (let ep = 0; ep < MAX_EPISODES; ep++) {
-    const [sr, sc] = startPos.split(',').map(Number);
-    let r = sr, c = sc, steps = 0;
-
-    while (steps < MAX_STEPS) {
-      const action           = chooseAction(r, c, epsilon);
-      const { nr, nc, reward, done } = envStep(r, c, action);
-      const oldQ             = getQ(r, c, action);
-      const tgt              = done ? reward : reward + GAMMA_QL * maxQ(nr, nc);
-      setQ(r, c, action, oldQ + ALPHA * (tgt - oldQ));
-      r = nr; c = nc; steps++;
-      if (done) { if (reward === 1) successCount++; break; }
-    }
-
-    episodeNum++;
-    epsilon = Math.max(EPSILON_MIN, epsilon * EPSILON_DECAY);
-  }
-
-  // Render final state
-  stepInEp = 0; epReward = 0; lastOutcome = '(instant)';
-  updateStatsPanel();
-  refreshArrows();
-  refreshHeatmap();
-  finishTraining();
-}
-
 function showRandomPolicy() {
   if (phase !== 'done') {
     alert('Please finish configuring the grid first.'); return;
