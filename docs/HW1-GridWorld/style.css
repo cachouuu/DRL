@@ -254,7 +254,7 @@ h1 {
 /* ---------- Speed row ---------- */
 .speed-row {
   display: flex; align-items: center; gap: 10px;
-  margin-bottom: 16px; flex-wrap: wrap; justify-content: center;
+  margin-bottom: 10px; flex-wrap: wrap; justify-content: center;
 }
 .speed-row label { font-size: 0.85rem; color: var(--accent-1); font-weight: 600; }
 .speed-row select {
@@ -265,6 +265,33 @@ h1 {
   background: rgba(255,255,255,0.05);
   color: #f3f4f6;
   outline: none; cursor: pointer;
+}
+
+/* ---------- Show Result row ---------- */
+.result-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-result {
+  background: linear-gradient(135deg, #065f46, #059669);
+  box-shadow: 0 4px 18px rgba(5,150,105,0.45);
+  padding: 10px 26px;
+  font-size: 0.95rem; font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.btn-result:hover:not(:disabled) {
+  box-shadow: 0 6px 24px rgba(5,150,105,0.6);
+}
+
+.result-hint {
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-style: italic;
 }
 
 /* ---------- Info panel ---------- */
