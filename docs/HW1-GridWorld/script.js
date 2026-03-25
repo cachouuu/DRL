@@ -228,9 +228,27 @@ function bestAction(r, c) {
 /* ═══════════════════════════════════════════════════════════════
    ENV STEP  (stochastic transition + stochastic reward)
 ══════════════════════════════════════════════════════════════ */
+
+/* Helper: read slider value safely (fallback to default if element absent) */
+function getSlider(id, defaultVal) {
+  const el = document.getElementById(id);
+  const v  = parseFloat(el ? el.value : defaultVal);
+  return isNaN(v) ? defaultVal : v;
+}
+
+/* Named handlers for oninput — avoids const-$ scope issues in inline handlers */
+function updateTransNoise(val) {
+  const lbl = document.getElementById('trans-noise-val');
+  if (lbl) lbl.textContent = val;
+}
+function updateRewardNoise(val) {
+  const lbl = document.getElementById('reward-noise-val');
+  if (lbl) lbl.textContent = val;
+}
+
 function envStep(r, c, action) {
   // HW 變化 3: stochastic transition p(s'|s,a) — slip probability
-  const transNoise = parseFloat($('trans-noise').value) || 0;
+  const transNoise = getSlider('trans-noise', 0);
   if (Math.random() < transNoise) {
     action = ARROW_KEYS[Math.floor(Math.random() * 4)];
   }
@@ -247,7 +265,7 @@ function envStep(r, c, action) {
   else if (blockSet.has(key))  { baseReward = -1; done = true; }
 
   // HW 變化 2: stochastic reward p(r|s,a) — Gaussian noise
-  const rewardSigma = parseFloat($('reward-noise').value) || 0;
+  const rewardSigma = getSlider('reward-noise', 0);
   const reward = baseReward + randGaussian() * rewardSigma;
 
   return { nr, nc, reward, done };
