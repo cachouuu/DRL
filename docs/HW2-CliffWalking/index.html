@@ -145,7 +145,21 @@
 
         <section class="card">
             <h2>8. 結論</h2>
-            <p>當環境中存在巨大的懲罰（如掉入懸崖）且代理人必須在學習過程中執行探索時，<strong>SARSA</strong> 能夠學習到更為安全且穩健的策略。相反地，如果我們可以完全分離「訓練」與「執行」階段（訓練時承受失敗，執行時完全貪婪），<strong>Q-learning</strong> 則能找到絕對最佳的捷徑。</p>
+            <p>根據本次在 Cliff Walking 環境的實驗比較，我們總結兩種演算法的差異如下：</p>
+            <ul>
+                <li style="margin-bottom: 1rem;"><strong>哪一種方法收斂較快？</strong><br>
+                <strong>SARSA</strong> 的收斂速度在訓練階段（Online performance）看起來較快，並且能更早達到穩定的平均獎勵。這是因為 SARSA 是 On-policy，它會把 ε-greedy 探索的風險考慮進去，快速學會繞過懸崖以避免 -100 的巨大懲罰。相反地，Q-learning (Off-policy) 因為總是評估最佳行動，學到的路徑緊貼懸崖，導致在訓練階段因為隨機探索而頻繁掉入懸崖，平均獎勵的收斂過程顯得震盪且低落。</li>
+                
+                <li style="margin-bottom: 1rem;"><strong>哪一種方法較穩定？</strong><br>
+                <strong>SARSA 較為穩定。</strong> 在持續保有隨機探索（ε > 0）的環境下，SARSA 的學習曲線在找到安全路徑後能保持平穩的高獎勵。而 Q-learning 因為其選擇的「最佳路徑」極度危險，只要發生隨機探索就有很高機率墜崖，因此即使其 Q 值已經收斂，它在訓練過程中的表現依然呈現極高的變異性與不穩定性。</li>
+                
+                <li><strong>在何種情境下應選擇 Q-learning 或 SARSA？</strong><br>
+                <ul style="margin-top: 0.5rem;">
+                    <li style="margin-bottom: 0.5rem;"><strong>選擇 SARSA：</strong> 當「在訓練過程中的表現與安全」非常重要，且錯誤的代價極高時（例如：實體機器人導航、自動駕駛、醫療決策），應選擇 SARSA。因為它會考量自身的探索行為，從而學習出保守、安全的策略以避免災難性後果。</li>
+                    <li><strong>選擇 Q-learning：</strong> 當「訓練環境是安全的模擬器（無實際危險）」，且我們最終只在乎「取得絕對最佳、最短的路徑」，並且可以在訓練完成後將 ε 設為 0 直接執行時，應選擇 Q-learning。即使它在訓練時頻繁失敗，最終取出的純 Greedy 策略卻是全域最佳解。</li>
+                </ul>
+                </li>
+            </ul>
         </section>
     </div>
 </main>
