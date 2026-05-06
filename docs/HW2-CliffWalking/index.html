@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q-learning vs SARSA Cliff Walking | DRL Homework</title>
+    <!-- Chart.js for Learning Curve -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>Q-learning vs SARSA in Cliff Walking</h1>
+    <p>互動式強化學習環境展示</p>
+</header>
+
+<main>
+    <div class="layout-container">
+        <!-- Control Panel -->
+        <aside class="control-panel card">
+            <h2>控制面板</h2>
+            <div class="control-group">
+                <label for="algorithm">演算法選擇:</label>
+                <select id="algorithm">
+                    <option value="qlearning">Q-learning</option>
+                    <option value="sarsa">SARSA</option>
+                    <option value="compare">比較兩者</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="epsilon">Epsilon (ε) <span id="epsilon-val">0.1</span></label>
+                <input type="range" id="epsilon" min="0" max="1" step="0.01" value="0.1">
+            </div>
+            
+            <div class="control-group">
+                <label for="alpha">Learning Rate (α) <span id="alpha-val">0.1</span></label>
+                <input type="range" id="alpha" min="0" max="1" step="0.01" value="0.1">
+            </div>
+
+            <div class="control-group">
+                <label for="gamma">Discount Factor (γ) <span id="gamma-val">0.9</span></label>
+                <input type="range" id="gamma" min="0" max="1" step="0.01" value="0.9">
+            </div>
+
+            <div class="control-group">
+                <label for="episodes">訓練回合數 (Episodes) <span id="episodes-val">500</span></label>
+                <input type="range" id="episodes" min="10" max="2000" step="10" value="500">
+            </div>
+
+            <div class="control-group">
+                <label for="speed">動畫速度 (Delay ms) <span id="speed-val">50</span></label>
+                <input type="range" id="speed" min="0" max="500" step="10" value="50">
+            </div>
+
+            <div class="button-group">
+                <button id="btn-start" class="btn primary">開始動畫訓練</button>
+                <button id="btn-pause" class="btn warning" disabled>暫停</button>
+                <button id="btn-step" class="btn info">單步回合</button>
+                <button id="btn-run-full" class="btn success">快速完整訓練</button>
+                <button id="btn-reset" class="btn danger">重置</button>
+            </div>
+            <div id="status-display" class="status-box">狀態: 準備就緒</div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="content-area">
+            
+            <!-- Grid Visualization -->
+            <section class="card" id="grid-section">
+                <h2>互動式訓練區 (GridWorld)</h2>
+                <div class="grid-container-wrapper">
+                    <div id="grid-container" class="grid-container"></div>
+                </div>
+                <div class="legend">
+                    <span class="legend-item"><span class="box start-box"></span> 起點</span>
+                    <span class="legend-item"><span class="box goal-box"></span> 終點</span>
+                    <span class="legend-item"><span class="box cliff-box"></span> 懸崖 (Cliff)</span>
+                    <span class="legend-item"><span class="box agent-box"></span> 代理人 (Agent)</span>
+                </div>
+            </section>
+
+            <!-- Learning Curve -->
+            <section class="card">
+                <h2>學習曲線分析</h2>
+                <div class="chart-container">
+                    <canvas id="learningCurve"></canvas>
+                </div>
+                <p>上圖顯示訓練過程中每個 Episode 獲得的總獎勵。比較不同演算法的收斂速度與穩定性。</p>
+            </section>
+        </div>
+    </div>
+
+    <!-- Explanations -->
+    <div class="explanations">
+        <section class="card">
+            <h2>1. 作業目標</h2>
+            <p>本專案實作並比較強化學習中兩種經典的時序差分(TD)演算法：<strong>Q-learning</strong> 與 <strong>SARSA</strong>。透過互動式網頁，我們可以在 Cliff Walking 環境中視覺化觀察兩者在學習過程中的行為差異、學習曲線，以及最終學習到的策略。</p>
+        </section>
+
+        <section class="card">
+            <h2>2. Cliff Walking 環境說明</h2>
+            <p>這是一個 4x12 的網格世界，規則如下：</p>
+            <ul>
+                <li><strong>起點</strong>位於左下角，<strong>終點</strong>位於右下角。</li>
+                <li>起點與終點之間的底層區域為<strong>懸崖 (Cliff)</strong>。</li>
+                <li>每移動一步，獲得獎勵 <strong>-1</strong>。</li>
+                <li>若掉入懸崖，獲得獎勵 <strong>-100</strong>，並且會被立刻送回起點。</li>
+                <li>到達終點後該回合(Episode)結束。</li>
+            </ul>
+        </section>
+
+        <div class="grid-2-col">
+            <section class="card">
+                <h2>3. Q-learning 原理 (Off-policy)</h2>
+                <p>Q-learning 是一種<strong>異策略 (Off-policy)</strong> 演算法。它在更新 Q 值時，總是假設下一步會採取<strong>最佳行動 (max_a' Q(s',a'))</strong>，而忽略了實際上可能因為 ε-greedy 策略而進行的隨機探索。</p>
+                <div class="formula">Q(s,a) &larr; Q(s,a) + &alpha; [r + &gamma; max_a' Q(s',a') - Q(s,a)]</div>
+                <p>因此，Q-learning 會學到一條最短但最危險的路徑（緊貼懸崖邊緣）。</p>
+            </section>
+
+            <section class="card">
+                <h2>4. SARSA 原理 (On-policy)</h2>
+                <p>SARSA 是一種<strong>同策略 (On-policy)</strong> 演算法。它在更新 Q 值時，使用的是<strong>實際選擇的下一步行動 (Q(s',a'))</strong>。這意味著它會把未來可能進行的隨機探索也考慮進去。</p>
+                <div class="formula">Q(s,a) &larr; Q(s,a) + &alpha; [r + &gamma; Q(s',a') - Q(s,a)]</div>
+                <p>為了避免因為探索而掉入懸崖承受 -100 的巨大懲罰，SARSA 傾向於學習一條遠離懸崖的<strong>安全路徑</strong>。</p>
+            </section>
+        </div>
+
+        <section class="card">
+            <h2>7. 最終策略比較</h2>
+            <p>在訓練完成後，我們可以看到 Q-learning 通常會選擇緊貼懸崖的最短路徑，而 SARSA 則會選擇繞遠路以確保安全。雖然 Q-learning 學到了理論上的最佳路徑，但在實際執行（仍保有探索機率）時，SARSA 的平均獎勵通常會高於 Q-learning，因為它避免了災難性的失敗。</p>
+            <div id="policy-comparison" class="grid-2-col policy-visuals" style="display:none;">
+                <div class="policy-box">
+                    <h3>Q-learning 策略</h3>
+                    <div id="grid-qlearning" class="grid-container small-grid"></div>
+                </div>
+                <div class="policy-box">
+                    <h3>SARSA 策略</h3>
+                    <div id="grid-sarsa" class="grid-container small-grid"></div>
+                </div>
+            </div>
+            <button id="btn-show-policy" class="btn info" style="margin-top: 15px;">顯示最終策略 (需先執行比較訓練)</button>
+        </section>
+
+        <section class="card">
+            <h2>8. 結論</h2>
+            <p>當環境中存在巨大的懲罰（如掉入懸崖）且代理人必須在學習過程中執行探索時，<strong>SARSA</strong> 能夠學習到更為安全且穩健的策略。相反地，如果我們可以完全分離「訓練」與「執行」階段（訓練時承受失敗，執行時完全貪婪），<strong>Q-learning</strong> 則能找到絕對最佳的捷徑。</p>
+        </section>
+    </div>
+</main>
+
+<footer>
+    <p>Q-learning vs SARSA Cliff Walking | DRL Homework</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
