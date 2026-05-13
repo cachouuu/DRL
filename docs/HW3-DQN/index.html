@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HW3 — DQN &amp; Variants | DRL Homework</title>
+  <meta name="description" content="HW3 Deep Q-Network Homework Report." />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="page-wrap">
+    <a class="btn-nav" href="../index.html" style="margin-bottom: 20px; display: inline-block;">← Back to Home</a>
+    
+    <header class="page-header">
+      <h1>🧠 HW3: DQN &amp; Its Variants</h1>
+      <p class="subtitle">Homework Report &amp; Implementation Details</p>
+    </header>
+
+    <div class="glass-card" style="margin-bottom: 40px;">
+      <h2 style="color: var(--blue); margin-bottom: 10px;">Project Overview</h2>
+      <p>This homework explores Deep Q-Networks (DQN) and several key enhancements that address its limitations. The code is implemented in Python (PyTorch and PyTorch Lightning) and is available in the <code>code/</code> directory.</p>
+      
+      <div class="nav-bar" style="margin-top: 20px;">
+        <a href="#hw3-1" class="btn-nav">HW3-1: Naive DQN</a>
+        <a href="#hw3-2" class="btn-nav">HW3-2: Double &amp; Dueling</a>
+        <a href="#hw3-3" class="btn-nav">HW3-3: Lightning &amp; Tips</a>
+        <a href="#bonus" class="btn-nav">Bonus: Rainbow</a>
+        <a href="#conclusion" class="btn-nav">Conclusion</a>
+      </div>
+    </div>
+
+    <!-- HW3-1 -->
+    <section id="hw3-1" class="report-section" style="margin-top: 0; padding-top: 0; border-top: none;">
+      <h2>HW3-1: Naive DQN for Static Mode</h2>
+      <p>In this section, we implement a basic Deep Q-Network for a static GridWorld environment where the start and goal positions remain fixed across episodes.</p>
+      
+      <h3>Implementation Highlights</h3>
+      <ul>
+        <li><strong>Neural Network:</strong> A simple Multi-Layer Perceptron (MLP) mapping state inputs to Q-values for each action.</li>
+        <li><strong>Experience Replay:</strong> We implement a replay buffer to store transitions $(s, a, r, s', \text{done})$ and sample mini-batches during training. This breaks the correlation between consecutive samples.</li>
+        <li><strong>Target Network:</strong> A separate target network is used to compute the target Q-values, which is updated periodically to stabilize training.</li>
+      </ul>
+
+      <h3>Results</h3>
+      <p><em>See <code>results/</code> directory for training plots. The agent successfully learns the optimal path to the goal, demonstrating the effectiveness of the Replay Buffer in stabilizing learning compared to a purely online update.</em></p>
+    </section>
+
+    <!-- HW3-2 -->
+    <section id="hw3-2" class="report-section">
+      <h2>HW3-2: Double DQN and Dueling DQN for Player Mode</h2>
+      <p>The Player Mode environment introduces more variability. To handle this, we upgrade our agent with two significant architectural improvements.</p>
+      
+      <h3>Double DQN</h3>
+      <p>Standard DQN suffers from overestimation bias due to the max operator in the Bellman equation. Double DQN addresses this by decoupling action selection from action evaluation:</p>
+      <div class="formula">
+        $Y_t^{\text{DoubleQ}} = R_{t+1} + \gamma Q(S_{t+1}, \arg\max_a Q(S_{t+1}, a; \theta_t); \theta_t^-)$
+      </div>
+      
+      <h3>Dueling DQN</h3>
+      <p>The Dueling architecture splits the network into two streams: one estimates the state value $V(s)$ and the other estimates the advantage $A(s,a)$ for each action.</p>
+      <div class="formula">
+        $Q(s,a) = V(s) + \left( A(s,a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s,a') \right)$
+      </div>
+      <p>This allows the network to learn which states are valuable without having to learn the effect of every action for every state, improving sample efficiency.</p>
+      
+      <h3>Results & Comparison</h3>
+      <p><em>See <code>results/hw3_2_comparison_curve.png</code> for the training comparison plot.</em> Both Double DQN and Dueling DQN show more stable convergence and higher average rewards in fewer episodes compared to the basic DQN.</p>
+    </section>
+
+    <!-- HW3-3 -->
+    <section id="hw3-3" class="report-section">
+      <h2>HW3-3: DQN for Random Mode with Training Tips</h2>
+      <p>In Random Mode, the start and goal positions change every episode, requiring the agent to generalize its learned policy. To support this harder task, we refactor the codebase to use <strong>PyTorch Lightning</strong> and introduce advanced training techniques.</p>
+      
+      <h3>PyTorch Lightning Conversion</h3>
+      <p>The model was encapsulated into a <code>LightningModule</code>, cleanly separating the architecture, the training loop (via <code>training_step</code>), and the optimizers. We utilized an <code>IterableDataset</code> to bridge our Replay Buffer with PyTorch Lightning's standard <code>DataLoader</code> mechanism.</p>
+
+      <h3>Training Tips Applied</h3>
+      <ul>
+        <li><strong>Gradient Clipping:</strong> Limits the maximum size of gradients during backpropagation to prevent the exploding gradients common in early DQN training.</li>
+        <li><strong>Learning Rate Scheduling:</strong> Applies a <code>StepLR</code> scheduler to incrementally decrease the learning rate, allowing the agent to fine-tune its policy as it nears convergence without overshooting.</li>
+      </ul>
+
+      <h3>Results</h3>
+      <p><em>See <code>results/hw3_3_lightning_random_curve.png</code> for the random mode training plot.</em> The agent is able to generalize finding the goal from varied starting positions, though it requires more episodes to converge than static mode.</p>
+    </section>
+
+    <!-- Bonus -->
+    <section id="bonus" class="report-section">
+      <h2>Bonus: Simplified Rainbow DQN</h2>
+      <p>Rainbow DQN combines several independent improvements to the DQN algorithm into a single, state-of-the-art agent. To solve the Random Mode GridWorld efficiently, we implemented a <strong>Simplified Rainbow DQN</strong>.</p>
+      
+      <h3>Components Included</h3>
+      <ul>
+        <li><strong>Double DQN:</strong> Prevents overestimation bias.</li>
+        <li><strong>Dueling DQN:</strong> Improves sample efficiency.</li>
+        <li><strong>Prioritized Experience Replay (PER):</strong> Samples transitions proportionally to their TD error, focusing learning on "surprising" experiences.</li>
+        <li><strong>N-Step Returns:</strong> Accumulates multi-step rewards to propagate values faster backwards through time.</li>
+      </ul>
+
+      <div class="highlight">
+        <p><strong>Note:</strong> Distributional RL and Noisy Nets were excluded from this simplified version to maintain beginner accessibility and ensure the agent can be quickly trained on a CPU.</p>
+      </div>
+
+      <h3>Results</h3>
+      <p><em>See <code>results/hw3_4_rainbow_bonus_curve.png</code> for the bonus training plot.</em> By leveraging PER and N-Step returns, the Simplified Rainbow agent is structurally much better equipped to handle the shifting goals of Random Mode and learns significantly faster than standard implementations.</p>
+    </section>
+
+    <!-- Conclusion -->
+    <section id="conclusion" class="report-section">
+      <h2>Conclusion and Homework Questions</h2>
+      
+      <h3>1. Why does standard Q-learning struggle in environments with large state spaces?</h3>
+      <p>Tabular Q-learning requires maintaining a table entry for every possible state-action pair. In environments with continuous or very large discrete state spaces, this becomes computationally infeasible (the curse of dimensionality) and suffers from poor sample efficiency since the agent cannot generalize knowledge across similar states.</p>
+
+      <h3>2. How does the Experience Replay Buffer improve training?</h3>
+      <p>It breaks the temporal correlation between consecutive experiences, providing i.i.d. (independent and identically distributed) samples for the neural network. It also allows the agent to learn from past experiences multiple times, greatly improving data efficiency.</p>
+
+      <h3>3. What is the primary benefit of the Dueling Architecture?</h3>
+      <p>It explicitly separates the estimation of state value and action advantage. In many states, the choice of action doesn't significantly affect the outcome. Dueling DQN can learn the value of these states directly without having to update the Q-values for every possible action.</p>
+    </section>
+
+  </div>
+
+  <footer>
+    <p><a href="https://github.com/cachouuu/DRL" target="_blank">GitHub Repository</a> &nbsp;·&nbsp; Deep Reinforcement Learning HW3 Report</p>
+  </footer>
+</body>
+</html>
