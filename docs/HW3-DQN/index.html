@@ -27,10 +27,53 @@
         <a href="#bonus" class="btn-nav">Bonus: Rainbow</a>
         <a href="#conclusion" class="btn-nav">Conclusion</a>
       </div>
+
+      <div class="nav-bar" style="margin-top: 10px;">
+        <a href="README.md" class="btn-nav" style="border-color: var(--blue); color: var(--blue);">README.md</a>
+        <a href="report.md" class="btn-nav" style="border-color: var(--blue); color: var(--blue);">report.md</a>
+        <a href="code/" class="btn-nav" style="border-color: var(--blue); color: var(--blue);">code/</a>
+        <a href="results/" class="btn-nav" style="border-color: var(--blue); color: var(--blue);">results/</a>
+      </div>
     </div>
 
+    <!-- Results Overview -->
+    <section class="report-section" style="margin-top: 0; padding-top: 0; border-top: none;">
+      <h2>Results Overview</h2>
+      <p>A high-level summary of the training curves generated across all four homework sections.</p>
+      
+      <div class="results-grid">
+        <!-- HW3-1 -->
+        <div class="result-card">
+          <h4>HW3-1: Naive DQN Learning Curve</h4>
+          <img src="results/hw3_1_learning_curve.png" alt="HW3-1 Naive DQN" class="result-img" />
+          <p class="result-desc">Shows the training reward curve of the basic DQN with experience replay in static mode.</p>
+        </div>
+
+        <!-- HW3-2 -->
+        <div class="result-card">
+          <h4>HW3-2: Basic vs Double vs Dueling DQN Comparison</h4>
+          <img src="results/hw3_2_comparison_curve.png" alt="HW3-2 Comparison" class="result-img" />
+          <p class="result-desc">Compares Basic DQN, Double DQN, and Dueling DQN under the same setting.</p>
+        </div>
+
+        <!-- HW3-3 -->
+        <div class="result-card">
+          <h4>HW3-3: PyTorch Lightning DQN on Random Mode</h4>
+          <img src="results/hw3_3_lightning_random_curve.png" alt="HW3-3 Lightning Random" class="result-img" />
+          <p class="result-desc">Shows the PyTorch Lightning version of DQN trained on random mode with training stabilization techniques.</p>
+        </div>
+
+        <!-- HW3-4 -->
+        <div class="result-card">
+          <h4>HW3-4 Bonus: Simplified Rainbow DQN on Random Mode</h4>
+          <img src="results/hw3_4_rainbow_bonus_curve.png" alt="HW3-4 Rainbow Bonus" class="result-img" />
+          <p class="result-desc">Shows the simplified Rainbow DQN bonus implementation using Double DQN, Dueling DQN, Prioritized Experience Replay, and n-step returns.</p>
+        </div>
+      </div>
+    </section>
+
     <!-- HW3-1 -->
-    <section id="hw3-1" class="report-section" style="margin-top: 0; padding-top: 0; border-top: none;">
+    <section id="hw3-1" class="report-section">
       <h2>HW3-1: Naive DQN for Static Mode</h2>
       <p>In this section, we implement a basic Deep Q-Network for a static GridWorld environment where the start and goal positions remain fixed across episodes.</p>
       

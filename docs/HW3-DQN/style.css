@@ -449,6 +449,49 @@ select:focus { outline: none; border-color: var(--blue); }
   overflow-x: auto;
 }
 
+/* ── Results Grid ────────────────────────────────────────────── */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.result-card {
+  background: var(--glass-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.result-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hi);
+  border-color: var(--border-hi);
+}
+
+.result-card h4 {
+  font-size: 0.95rem;
+  color: var(--blue);
+  margin-bottom: 12px;
+}
+
+.result-img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.result-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
 /* ── Comparison Table ────────────────────────────────────────── */
 .cmp-table {
   width: 100%;
