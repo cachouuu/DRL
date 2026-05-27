@@ -1,0 +1,44 @@
+sequenceDiagram
+    participant U as User
+    participant C as LLM Controller
+    participant P as Task Planner
+    participant R as Tool Router
+    participant T as Tools
+    participant M as Memory
+    participant E as Evaluation Module
+
+    U->>C: Upload PDF and request presentation help
+    C->>M: Store user preferences
+    C->>P: Plan paper-reading workflow
+    P-->>C: Ordered task list
+    C->>R: Request parse_paper_pdf(pdf)
+    R->>T: parse_paper_pdf(pdf_file)
+    T-->>R: paper_text, metadata, section_map
+    R-->>C: Parsed paper structure
+    C->>M: Save section_map
+
+    C->>R: Request summarize_section(section_text)
+    R->>T: summarize_section for major sections
+    T-->>R: section summaries
+    R-->>C: Structured paper summary
+    C->>M: Save summaries
+
+    C->>R: Request explain_concept(concept, context)
+    R->>T: explain_concept for key terms
+    T-->>R: concept explanations
+    R-->>C: Explanations matched to paper context
+
+    C->>R: Request generate_slide_outline(summary, preferences)
+    R->>T: generate_slide_outline
+    T-->>R: slide outline
+    R-->>C: Slide plan
+
+    C->>R: Request generate_speaking_script(outline)
+    R->>T: generate_speaking_script
+    T-->>R: speaker notes
+    R-->>C: Speaking script
+
+    C->>E: evaluate_presentation_readiness(outputs)
+    E-->>C: readiness score and revision advice
+    C->>M: Save evaluation feedback
+    C-->>U: Return final report and presentation package

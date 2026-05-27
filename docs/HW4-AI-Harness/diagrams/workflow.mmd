@@ -1,0 +1,26 @@
+flowchart TD
+    start["User uploads paper"]
+    prefs["User provides preferences<br/>audience level, talk length, goal"]
+    plan["LLM plans tasks"]
+    parse["PDF parser extracts structure<br/>title, abstract, sections, references"]
+    summary["Section summarizer summarizes<br/>motivation, method, results, limitations"]
+    concepts["Concept explainer explains terms<br/>methods, metrics, acronyms"]
+    outline["Slide outline generator creates outline"]
+    script["Speaking script generator drafts notes"]
+    eval["Evaluation tool checks readiness"]
+    decision{"Ready for presentation?"}
+    revise["Controller revises weak part"]
+    final["Final report is generated<br/>summary, concepts, outline, script, score"]
+
+    start --> prefs
+    prefs --> plan
+    plan --> parse
+    parse --> summary
+    summary --> concepts
+    concepts --> outline
+    outline --> script
+    script --> eval
+    eval --> decision
+    decision -- "Yes" --> final
+    decision -- "No" --> revise
+    revise --> eval

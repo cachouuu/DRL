@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HW4: AI Harness System | DRL Homework</title>
+  <meta name="description" content="HW4 AI Harness Systems Design and Analysis project." />
+  <link rel="stylesheet" href="./style.css" />
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "dark",
+      securityLevel: "loose",
+      flowchart: { curve: "basis" }
+    });
+  </script>
+</head>
+<body>
+  <div class="page-wrap">
+    <nav class="top-nav" aria-label="Page navigation">
+      <a href="../index.html">Back to Homework Home</a>
+      <a href="https://github.com/cachouuu/DRL" target="_blank" rel="noopener">GitHub: cachouuu/DRL</a>
+    </nav>
+
+    <header class="page-header">
+      <p class="eyebrow">Deep Reinforcement Learning - Homework 4</p>
+      <h1>AI Harness System Design</h1>
+      <p class="subtitle">AI Paper Reading and Presentation Assistant</p>
+    </header>
+
+    <section id="overview" class="report-section">
+      <h2>1. Project Overview</h2>
+      <p>
+        This project designs a mock AI harness that helps a student read a technical
+        research paper and prepare a presentation. The system accepts a paper PDF
+        and presentation preferences, then produces a structured summary, concept
+        explanations, slide outline, speaking script plan, and presentation readiness
+        evaluation.
+      </p>
+      <p>
+        The focus is system design, not model training. The current implementation is
+        a local mock prototype that demonstrates tool calling and orchestration without
+        real external APIs.
+      </p>
+
+      <div class="resource-list" aria-label="Project files">
+        <a href="./README.md">README.md</a>
+        <a href="./report.md">report.md</a>
+        <a href="./infographic.md">infographic.md</a>
+        <a href="./log.md">log.md</a>
+        <a href="https://github.com/cachouuu/DRL/tree/main/docs/HW4-AI-Harness/src" target="_blank" rel="noopener">src/</a>
+      </div>
+    </section>
+
+    <section id="problem" class="report-section">
+      <h2>2. Problem Definition</h2>
+      <p>
+        Technical papers are difficult to present because students must identify the
+        problem, method, evidence, limitations, and key concepts from dense text. A
+        single chatbot response can be useful, but it may lose paper structure or
+        produce unsupported claims.
+      </p>
+      <p>
+        The design goal is to make the process inspectable: preserve intermediate
+        artifacts, call specialized tools, store useful context, and evaluate the final
+        presentation package before returning it.
+      </p>
+    </section>
+
+    <section id="architecture" class="report-section">
+      <h2>3. AI Harness Architecture</h2>
+      <p>
+        The LLM acts as the controller. It plans the task, routes function calls to
+        tools, stores intermediate results in memory, and uses an evaluation module to
+        decide whether the output is ready or needs revision.
+      </p>
+
+      <div class="diagram-panel">
+        <pre class="mermaid">
+flowchart LR
+    user["User&lt;br/&gt;Student presenter"]
+    paper["Research paper PDF&lt;br/&gt;plus preferences"]
+    controller["LLM Controller&lt;br/&gt;reasoning and supervision"]
+    planner["Task Planner&lt;br/&gt;breaks goal into steps"]
+    router["Tool Router&lt;br/&gt;selects function calls"]
+    memory["Memory&lt;br/&gt;paper state, user preferences,&lt;br/&gt;feedback history"]
+    evaluation["Evaluation Module&lt;br/&gt;readiness rubric and revision advice"]
+    outputs["Final Outputs&lt;br/&gt;summary, explanations,&lt;br/&gt;outline, script, score"]
+
+    subgraph tools["Tools"]
+        pdf["parse_paper_pdf"]
+        summarize["summarize_section"]
+        explain["explain_concept"]
+        slides["generate_slide_outline"]
+        readiness["evaluate_presentation_readiness"]
+    end
+
+    user --> paper
+    paper --> controller
+    controller --> planner
+    planner --> router
+    router --> tools
+    tools --> controller
+    controller &lt;--&gt; memory
+    controller --> evaluation
+    evaluation --> controller
+    controller --> outputs
+        </pre>
+      </div>
+      <p class="caption">
+        If Mermaid rendering is unavailable, the diagram source remains visible as a
+        readable code block.
+      </p>
+    </section>
+
+    <section id="tools" class="report-section">
+      <h2>4. Tool Design</h2>
+      <p>
+        Each tool has a narrow responsibility, structured inputs, and structured outputs.
+        This makes the harness easier to test and easier to debug.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th>Input</th>
+              <th>Output</th>
+              <th>When Called</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>parse_paper_pdf</code></td>
+              <td>PDF path or uploaded file</td>
+              <td>Metadata, sections, key concepts</td>
+              <td>First step after paper upload</td>
+            </tr>
+            <tr>
+              <td><code>summarize_section</code></td>
+              <td>Section title and text</td>
+              <td>Section summary and key points</td>
+              <td>After paper sections are available</td>
+            </tr>
+            <tr>
+              <td><code>explain_concept</code></td>
+              <td>Concept and audience level</td>
+              <td>Audience-aware explanation</td>
+              <td>After key terms are extracted</td>
+            </tr>
+            <tr>
+              <td><code>generate_slide_outline</code></td>
+              <td>Paper summary and talk length</td>
+              <td>Slide titles, bullets, timing</td>
+              <td>After summaries are complete</td>
+            </tr>
+            <tr>
+              <td><code>evaluate_presentation_readiness</code></td>
+              <td>Outline and rubric</td>
+              <td>Score, checks, recommendations</td>
+              <td>Before final output is returned</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="workflow" class="report-section">
+      <h2>5. Agent Workflow</h2>
+      <p>
+        The workflow begins with user input and ends with a presentation-ready package.
+        The evaluation step can trigger revision if an output is incomplete or unclear.
+      </p>
+
+      <div class="diagram-panel">
+        <pre class="mermaid">
+flowchart TD
+    start["User uploads paper"]
+    prefs["User provides preferences&lt;br/&gt;audience level, talk length, goal"]
+    plan["LLM plans tasks"]
+    parse["PDF parser extracts structure"]
+    summary["Section summarizer summarizes"]
+    concepts["Concept explainer explains terms"]
+    outline["Slide outline generator creates outline"]
+    eval["Evaluation tool checks readiness"]
+    decision{"Ready?"}
+    revise["Revise weak part"]
+    final["Final report is generated"]
+
+    start --> prefs
+    prefs --> plan
+    plan --> parse
+    parse --> summary
+    summary --> concepts
+    concepts --> outline
+    outline --> eval
+    eval --> decision
+    decision -- "Yes" --> final
+    decision -- "No" --> revise
+    revise --> eval
+        </pre>
+      </div>
+    </section>
+
+    <section id="orchestration" class="report-section">
+      <h2>6. Orchestration Logic</h2>
+      <p>
+        The controller keeps a memory dictionary with the user request, parsed paper,
+        section summaries, concept explanations, slide outline, evaluation result, and
+        tool-call trace. This represents how an LLM-based harness can pass outputs from
+        one tool into the next.
+      </p>
+      <ul>
+        <li>If no parsed paper exists, call <code>parse_paper_pdf</code>.</li>
+        <li>If sections exist but summaries are missing, call <code>summarize_section</code>.</li>
+        <li>If key concepts exist, call <code>explain_concept</code>.</li>
+        <li>If summaries are complete, call <code>generate_slide_outline</code>.</li>
+        <li>If an outline exists, call <code>evaluate_presentation_readiness</code>.</li>
+      </ul>
+    </section>
+
+    <section id="evaluation" class="report-section">
+      <h2>7. Evaluation Method</h2>
+      <p>
+        The readiness evaluator checks whether the generated outline is usable for a
+        presentation. The mock rubric rewards coverage, clarity, timing, and a final
+        takeaway slide.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Purpose</th>
+              <th>Mock Weight</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Coverage</td>
+              <td>Motivation, architecture, and results are represented.</td>
+              <td>30</td>
+            </tr>
+            <tr>
+              <td>Clarity</td>
+              <td>Each slide has enough concrete bullet points.</td>
+              <td>25</td>
+            </tr>
+            <tr>
+              <td>Timing</td>
+              <td>Total outline time fits the requested talk length.</td>
+              <td>20</td>
+            </tr>
+            <tr>
+              <td>Takeaway</td>
+              <td>The presentation closes with a clear final message.</td>
+              <td>25</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="infographic" class="report-section">
+      <h2>8. Infographic</h2>
+      <p>
+        The infographic materials are available as Markdown and Mermaid source files.
+        They show the architecture, workflow, and function-calling sequence.
+      </p>
+
+      <div class="diagram-panel">
+        <pre class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant C as LLM Controller
+    participant R as Tool Router
+    participant T as Tools
+    participant M as Memory
+    participant E as Evaluation Module
+
+    U->>C: Upload PDF and preferences
+    C->>R: Request parse_paper_pdf(pdf)
+    R->>T: parse_paper_pdf
+    T-->>C: metadata, sections, concepts
+    C->>M: Store parsed paper
+    C->>R: Request summaries and concept explanations
+    R->>T: summarize_section, explain_concept
+    T-->>C: summaries and explanations
+    C->>R: Request generate_slide_outline
+    T-->>C: slide outline
+    C->>E: evaluate_presentation_readiness
+    E-->>C: score and recommendations
+    C-->>U: Return final materials
+        </pre>
+      </div>
+
+      <div class="resource-list compact" aria-label="Infographic files">
+        <a href="./infographic.md">infographic.md</a>
+        <a href="./diagrams/architecture.mmd">architecture.mmd</a>
+        <a href="./diagrams/workflow.mmd">workflow.mmd</a>
+        <a href="./diagrams/sequence.mmd">sequence.mmd</a>
+      </div>
+    </section>
+
+    <section id="links" class="report-section">
+      <h2>9. Project Links</h2>
+      <p>
+        The files below contain the full written report, AI-assisted design log,
+        infographic source, and runnable mock implementation.
+      </p>
+      <ul class="plain-links">
+        <li><a href="./README.md">README.md</a></li>
+        <li><a href="./report.md">report.md</a></li>
+        <li><a href="./infographic.md">infographic.md</a></li>
+        <li><a href="./log.md">log.md</a></li>
+        <li><a href="https://github.com/cachouuu/DRL/tree/main/docs/HW4-AI-Harness/src" target="_blank" rel="noopener">src/ on GitHub</a></li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>
+        <a href="https://github.com/cachouuu/DRL" target="_blank" rel="noopener">cachouuu/DRL</a>
+        &nbsp;|&nbsp; HW4 AI Harness System Design
+      </p>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,29 @@
+flowchart LR
+    user["User<br/>Student presenter"]
+    paper["Research paper PDF<br/>plus preferences"]
+    controller["LLM Controller<br/>reasoning and supervision"]
+    planner["Task Planner<br/>breaks goal into steps"]
+    router["Tool Router<br/>selects function calls"]
+    memory["Memory<br/>paper state, user preferences,<br/>feedback history"]
+    evaluation["Evaluation Module<br/>readiness rubric and revision advice"]
+    outputs["Final Outputs<br/>structured summary<br/>concept explanations<br/>slide outline<br/>speaking script<br/>readiness score"]
+
+    subgraph tools["Tools"]
+        pdf["parse_paper_pdf"]
+        summarize["summarize_section"]
+        explain["explain_concept"]
+        slides["generate_slide_outline"]
+        script["generate_speaking_script"]
+        readiness["evaluate_presentation_readiness"]
+    end
+
+    user --> paper
+    paper --> controller
+    controller --> planner
+    planner --> router
+    router --> tools
+    tools --> controller
+    controller <--> memory
+    controller --> evaluation
+    evaluation --> controller
+    controller --> outputs
