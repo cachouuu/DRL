@@ -9,18 +9,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f172a;
-      --text: #f8fafc;
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --glass: rgba(255, 255, 255, 0.05);
-      --border: rgba(255, 255, 255, 0.1);
+      --bg: #f7f3ea;
+      --text: #263238;
+      --muted: #68736f;
+      --primary: #557a75;
+      --primary-hover: #3f625e;
+      --card: #fffdf8;
+      --border: #ded6c8;
+      --shadow: rgba(92, 76, 52, 0.12);
     }
 
     body {
       margin: 0;
       font-family: 'Outfit', sans-serif;
-      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      background:
+        radial-gradient(circle at top left, rgba(202, 216, 205, 0.55), transparent 34rem),
+        linear-gradient(135deg, #f8f4ea 0%, #eef3ee 48%, #f9f6ef 100%);
       color: var(--text);
       min-height: 100vh;
       display: flex;
@@ -34,15 +38,13 @@
       font-size: 2.2rem;
       margin-bottom: 6px;
       font-weight: 700;
-      background: linear-gradient(to right, #60a5fa, #a855f7);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: #2f4f4a;
       text-align: center;
     }
 
     .subtitle {
       font-size: 0.9rem;
-      color: #9ca3af;
+      color: var(--muted);
       margin-bottom: 48px;
       text-align: center;
     }
@@ -59,38 +61,36 @@
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      background: var(--glass);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 18px;
+      border-radius: 12px;
       padding: 28px 32px;
       width: 260px;
       text-decoration: none;
       color: var(--text);
       transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 10px 24px var(--shadow);
     }
 
     .card:hover {
-      transform: translateY(-5px);
-      border-color: rgba(167, 139, 250, 0.5);
-      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+      transform: translateY(-3px);
+      border-color: #b8c7bd;
+      box-shadow: 0 14px 28px rgba(92, 76, 52, 0.16);
     }
 
-    .card-icon  { font-size: 2rem; margin-bottom: 12px; }
+    .card-icon  { font-size: 1.6rem; margin-bottom: 12px; color: var(--primary); }
     .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
-    .card-desc  { font-size: 0.8rem; color: #9ca3af; line-height: 1.55; }
-    .card-link  { margin-top: 14px; font-size: 0.82rem; color: #a78bfa; font-weight: 600; }
+    .card-desc  { font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
+    .card-link  { margin-top: 14px; font-size: 0.82rem; color: var(--primary); font-weight: 600; }
 
     footer {
       margin-top: 56px;
       font-size: 0.75rem;
-      color: #4b5563;
+      color: var(--muted);
       text-align: center;
     }
-    footer a { color: #6b7280; text-decoration: none; }
-    footer a:hover { color: #a78bfa; }
+    footer a { color: var(--primary); text-decoration: none; }
+    footer a:hover { color: var(--primary-hover); }
   </style>
 </head>
 <body>

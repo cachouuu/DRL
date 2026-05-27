@@ -584,3 +584,142 @@ footer a:hover { color: var(--purple); }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Soft academic theme override ────────────────────────────── */
+:root {
+  --bg-deep: #f8f4ea;
+  --bg-1: #f8f4ea;
+  --bg-2: #eef3ee;
+  --bg-3: #f9f6ef;
+  --glass: #fffdf8;
+  --glass-mid: #f4efe6;
+  --glass-high: #ebe3d5;
+  --border: #ded6c8;
+  --border-hi: #b8c7bd;
+  --text: #263238;
+  --text-muted: #68736f;
+  --text-dim: #8a8175;
+  --blue: #557a75;
+  --purple: #6f7f9a;
+  --teal: #4f8178;
+  --green: #5f8a70;
+  --amber: #b58b57;
+  --red: #a8665d;
+  --pink: #9d7480;
+  --shadow: 0 10px 24px rgba(92, 76, 52, 0.1);
+  --shadow-hi: 0 14px 28px rgba(92, 76, 52, 0.14);
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(202, 216, 205, 0.58), transparent 34rem),
+    linear-gradient(135deg, var(--bg-1), var(--bg-2), var(--bg-3));
+  color: var(--text);
+}
+
+.page-header h1,
+.report-section h2 {
+  background: none;
+  -webkit-text-fill-color: initial;
+  color: #2f4f4a;
+}
+
+a:hover,
+footer a:hover {
+  color: #3f625e;
+}
+
+.btn-nav,
+.algo-tab,
+.status-bar,
+.glass-card,
+.stat-card,
+.result-card,
+.report-section .highlight,
+.formula,
+select,
+.code-block,
+.cmp-table th {
+  border-color: var(--border);
+  background: var(--glass);
+  box-shadow: none;
+}
+
+.glass-card,
+.result-card {
+  box-shadow: var(--shadow);
+}
+
+.glass-card:hover,
+.result-card:hover {
+  border-color: var(--border-hi);
+  box-shadow: var(--shadow-hi);
+}
+
+.btn-run {
+  background: #557a75;
+}
+
+.btn-run:hover:not(:disabled) {
+  background: #48645f;
+  box-shadow: none;
+}
+
+.btn-stop {
+  background: #f4e8e4;
+}
+
+.btn-reset {
+  background: #f4efe6;
+}
+
+input[type="range"],
+.progress-fill {
+  background: #8aa6a0;
+}
+
+.dqn-cell {
+  background: #fffdf8;
+  border-color: #ded6c8;
+}
+
+.dqn-cell.clickable:hover {
+  border-color: #9fb4ab;
+}
+
+.dqn-cell.agent {
+  background: #dbe8e3;
+  box-shadow: 0 0 0 3px rgba(85, 122, 117, 0.14);
+}
+
+.cell-arrow {
+  color: #557a75;
+}
+
+.code-block {
+  color: #33413d;
+}
+
+.code-block .kw,
+.code-block .fn,
+.code-block .str,
+.code-block .num,
+.code-block .cls {
+  color: #48645f;
+}
+
+.code-block .cmt {
+  color: #8a8175;
+}
+
+.result-img {
+  box-shadow: 0 6px 14px rgba(92, 76, 52, 0.12);
+}
+
+.cmp-table td {
+  border-bottom-color: #e8dfd2;
+}
+
+.cmp-table tr:hover td {
+  background: #f4efe6;
+}

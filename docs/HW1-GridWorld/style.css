@@ -372,3 +372,110 @@ footer a:hover { color: var(--accent-1); }
   line-height: 1.55;
 }
 
+/* ---------- Soft academic theme override ---------- */
+:root {
+  --bg-start: #f8f4ea;
+  --bg-mid: #eef3ee;
+  --bg-end: #f9f6ef;
+  --accent-1: #557a75;
+  --accent-2: #6d8f88;
+  --btn-purple: #6f8f89;
+  --btn-blue: #5f7f9a;
+  --glass: #fffdf8;
+  --border: #ded6c8;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(202, 216, 205, 0.58), transparent 34rem),
+    linear-gradient(135deg, var(--bg-start), var(--bg-mid), var(--bg-end));
+  color: #263238;
+}
+
+h1 {
+  background: none;
+  -webkit-text-fill-color: initial;
+  color: #2f4f4a;
+}
+
+.subtitle,
+.feature-desc,
+footer {
+  color: #68736f;
+}
+
+.controls label,
+.speed-row label,
+.feature-title,
+#info-panel h2 {
+  color: #557a75;
+}
+
+.controls select,
+.speed-row select {
+  background: #fffdf8;
+  color: #263238;
+  border-color: #c8d4cc;
+}
+
+.controls input[type="range"],
+#progress-bar {
+  background: linear-gradient(90deg, #b7c8bf, #8aa6a0);
+}
+
+#status-bar,
+.stat-card,
+.feature-card,
+#info-panel {
+  background: #fffdf8;
+  border-color: #ded6c8;
+  color: #3f4946;
+  box-shadow: 0 8px 20px rgba(92, 76, 52, 0.1);
+}
+
+.cell {
+  background: #fffdf8;
+  border-color: #ded6c8;
+  color: #6b756f;
+}
+
+.cell:hover {
+  border-color: #9fb4ab;
+}
+
+.cell-coord,
+.cell-value {
+  color: #6b756f;
+}
+
+.cell-arrow {
+  color: #3f5f59;
+}
+
+.dot-free {
+  background: #fffdf8;
+  border-color: #ded6c8;
+}
+
+.btn {
+  box-shadow: none !important;
+}
+
+.btn-reset,
+.btn-back {
+  background: #6b756f;
+}
+
+.btn-run,
+.btn-random {
+  background: #557a75;
+}
+
+.btn-pause {
+  background: #b58b57;
+}
+
+.feature-card:hover {
+  border-color: #b8c7bd;
+  transform: translateY(-1px);
+}

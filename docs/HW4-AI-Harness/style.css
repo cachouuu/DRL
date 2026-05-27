@@ -355,3 +355,81 @@ footer {
     padding: 20px;
   }
 }
+
+/* Soft academic theme override */
+:root {
+  --bg-1: #f8f4ea;
+  --bg-2: #eef3ee;
+  --bg-3: #f9f6ef;
+  --glass: #fffdf8;
+  --glass-mid: #f4efe6;
+  --border: #ded6c8;
+  --border-hi: #b8c7bd;
+  --text: #263238;
+  --text-muted: #68736f;
+  --blue: #557a75;
+  --purple: #6f7f9a;
+  --teal: #4f8178;
+  --green: #5f8a70;
+  --amber: #b58b57;
+  --red: #a8665d;
+  --shadow: 0 10px 24px rgba(92, 76, 52, 0.1);
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(202, 216, 205, 0.58), transparent 34rem),
+    linear-gradient(135deg, var(--bg-1), var(--bg-2), var(--bg-3));
+  color: var(--text);
+}
+
+.page-header h1 {
+  background: none;
+  -webkit-text-fill-color: initial;
+  color: #2f4f4a;
+}
+
+.glass-card,
+.report-section,
+.mini-card,
+.tool-item,
+.diagram-panel,
+table,
+.resource-list a,
+.btn-nav {
+  background: var(--glass);
+  border-color: var(--border);
+  box-shadow: var(--shadow);
+}
+
+.diagram-panel {
+  background: #f4efe6;
+}
+
+th {
+  background: #e9f0eb;
+  color: #2f4f4a;
+}
+
+td,
+.top-nav a,
+.resource-list a,
+.caption {
+  color: var(--text-muted);
+}
+
+.report-section h2 {
+  color: #2f4f4a;
+}
+
+.report-section h3,
+code {
+  color: #557a75;
+}
+
+.btn-nav:hover,
+.resource-list a:hover {
+  background: #f4efe6;
+  border-color: var(--border-hi);
+  color: #263238;
+}

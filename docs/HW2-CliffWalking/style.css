@@ -285,3 +285,71 @@ footer {
   color: white;
   margin-top: 3rem;
 }
+
+/* Soft academic theme override */
+:root {
+  --primary-color: #48645f;
+  --secondary-color: #607a74;
+  --accent-color: #8f6f4f;
+  --bg-color: #f8f4ea;
+  --card-bg: #fffdf8;
+  --text-color: #263238;
+  --border-color: #ded6c8;
+
+  --grid-safe: #f5efe4;
+  --grid-cliff: #ead4cb;
+  --grid-start: #dceade;
+  --grid-goal: #c7ddce;
+  --agent-color: #557a75;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(202, 216, 205, 0.58), transparent 34rem),
+    linear-gradient(135deg, #f8f4ea, #eef3ee 55%, #f9f6ef);
+}
+
+header,
+footer {
+  background: #48645f;
+  color: #fffdf8;
+}
+
+.card {
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 24px rgba(92, 76, 52, 0.1);
+}
+
+h2 {
+  border-bottom-color: #c7b89d;
+}
+
+.btn {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.btn.primary,
+.btn.info,
+.btn.success {
+  background-color: #557a75;
+}
+
+.btn.warning {
+  background-color: #b58b57;
+}
+
+.btn.danger {
+  background-color: #a8665d;
+}
+
+.status-box,
+.formula {
+  background-color: #f4efe6;
+  border-color: #c7b89d;
+}
+
+.grid-container {
+  background-color: #d8d0c2;
+  border-color: #d8d0c2;
+}
