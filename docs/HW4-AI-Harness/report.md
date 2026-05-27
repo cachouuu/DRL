@@ -1,5 +1,11 @@
 # HW4: AI Harness System Design and Analysis
 
+## Chinese Summary / 中文摘要
+
+本作業設計一個 **AI Paper Reading and Presentation Assistant**，目標是幫助學生閱讀技術研究論文，並產生簡報所需的摘要、概念解釋、投影片大綱、講稿與簡報準備度評估。這不是模型訓練作業，而是 AI harness 系統設計作業。重點在於如何讓 LLM 作為系統控制器，透過工具呼叫、記憶、任務規劃、流程編排與評估機制，完成一個可檢查、可擴充的多步驟工作流程。
+
+The system is currently a design and mock prototype. It demonstrates the architecture and orchestration logic without calling real external APIs or parsing real PDF files.
+
 ## 1. Problem Definition and Application Background
 
 This project designs an **AI Paper Reading and Presentation Assistant** for students who need to understand technical research papers and prepare oral presentations. The target user is a student in a technical course who uploads a research paper PDF and asks the system to produce a structured paper summary, concept explanations, a slide outline, a speaking script, and a presentation readiness evaluation.
